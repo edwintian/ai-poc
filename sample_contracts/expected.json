@@ -322,9 +322,11 @@
       "status": "Needs Attention"
     },
     "termination": {
-      "found": false,
-      "page": null,
+      "found": true,
+      "page": 2,
+      "phrase": "Either party may terminate this contract by giving one month's written notice.",
       "status": [
+        "Consistent",
         "Unable to Assess",
         "Needs Attention"
       ]
@@ -409,9 +411,11 @@
       ]
     },
     "termination": {
-      "found": false,
-      "page": null,
+      "found": true,
+      "page": 2,
+      "phrase": "either party may terminate this contract by giving 2 months' written notice",
       "status": [
+        "Consistent",
         "Unable to Assess",
         "Needs Attention"
       ]

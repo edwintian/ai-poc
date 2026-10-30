@@ -79,9 +79,20 @@ Rules:
 - reason: one short sentence on why you chose the status.
 - question: one practical question the employee could ask the employer, or null.
 - Never call anything "illegal"; describe whether it is consistent with the sources.
-- status must be one of: "Consistent", "Needs Attention", "Unable to Assess". Use
-  "Unable to Assess" when the evidence is not enough.
-- If a rule result is shown, it was computed by code from the law; do not contradict it."""
+- status must be one of: "Consistent", "Needs Attention", "Unable to Assess".
+- If a rule result is shown, it was computed by code from the law; do not contradict it.
+
+Statuses:
+- "Consistent" means a cited official source states a specific requirement for this term AND the
+  contract wording explicitly meets it (e.g. notice of at least the s 10 minimum for both sides).
+- "Needs Attention" means a cited source sets a requirement or protection that the wording appears
+  to fall short of, contradict or leave out (e.g. no payment timing where s 21 requires payment
+  within 7 days; dismissal for misconduct without the due inquiry s 14 describes; deductions
+  beyond those s 27 allows). This includes wording that is vague or one-sided on a point the sources regulate.
+- "Unable to Assess" means the sources shown set no specific requirement for what the wording says
+  (e.g. probation length), or the wording only refers to "the Employment Act" without stating the
+  terms, or the evidence is insufficient.
+When unsure between Consistent and another status, do not choose Consistent."""
 
 
 class NotAContract(Exception):

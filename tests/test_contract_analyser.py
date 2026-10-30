@@ -646,3 +646,14 @@ def test_scenario_varied_notice_leave_wording_and_page(scenario_pipeline):
         assert by[k].wording == w and by[k].page == 2
         assert normalise(w) in normalise(pages[1].text)
     assert by["annual_leave"].status == "Consistent"
+
+
+def test_assessment_prompt_defines_statuses():
+    s = " ".join(ca.ASSESSMENT_SYSTEM.split())
+    assert '"Consistent" means' in s and "states a specific requirement" in s and "explicitly meets it" in s
+    assert '"Needs Attention" means' in s and "fall short of, contradict or leave out" in s
+    assert "s 21" in s and "s 14" in s and "s 27" in s and "vague or one-sided" in s
+    assert '"Unable to Assess" means' in s and "set no specific requirement" in s
+    assert 'only refers to "the Employment Act"' in s
+    assert "When unsure between Consistent and another status, do not choose Consistent." in s
+    assert UNTRUSTED in s and "illegal" in s and "Official sources" in s
