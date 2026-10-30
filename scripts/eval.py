@@ -63,7 +63,7 @@ def main(analyse_fn: Callable | None = None, pipeline=None, llm=None, expected: 
         from src.contract_analyser import analyse as analyse_fn
     samples_dir = samples_dir or ROOT / "sample_contracts"
     if expected is None:
-        expected = json.loads((samples_dir / "expected.json").read_text())
+        expected = json.loads((samples_dir / "expected.json").read_text(encoding="utf-8"))
     if pipeline is None:
         from src.rag_pipeline import OpenAIEmbedder, RagPipeline, VectorStore
         pipeline = RagPipeline(VectorStore.load(str(ROOT / "data" / "knowledge_base")), OpenAIEmbedder())

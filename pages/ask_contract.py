@@ -43,12 +43,14 @@ if pipeline is None or pipeline.contract is None:
         pass
 else:
     st.caption(DISCLAIMER)
+    st.caption("Your questions and the relevant contract passages are sent to OpenAI to generate answers.")
     for turn in st.session_state["chat"]:
         render_turn(turn)
     question = st.chat_input("Ask a question about your contract")
     if question:
         try:
-            reply = qa.answer(question, st.session_state["chat"], pipeline, llm_mod.OpenAIClient())
+            with st.spinner("Finding an answer…"):
+                reply = qa.answer(question, st.session_state["chat"], pipeline, llm_mod.OpenAIClient())
         except (llm_mod.LLMError, rp.RetrievalError):
             st.error("The question service is unavailable right now; please try again.")
         else:

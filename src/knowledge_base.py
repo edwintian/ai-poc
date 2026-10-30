@@ -71,7 +71,7 @@ def chunk_text(text: str, title: str, url: str, kind: Literal["law", "guidance"]
 def build_kb(manifest_path: str, out_dir: str, embedder) -> int:
     from src.rag_pipeline import VectorStore
 
-    entries = json.loads(Path(manifest_path).read_text())
+    entries = json.loads(Path(manifest_path).read_text(encoding="utf-8"))
     passages: list[Passage] = []
     for e in entries:
         f = Path(e["file"])
@@ -80,7 +80,7 @@ def build_kb(manifest_path: str, out_dir: str, embedder) -> int:
             f = alt if alt.exists() else f
         if not f.exists():
             raise FileNotFoundError(f"Knowledge base source file not found: {e['file']}")
-        ps = chunk_text(f.read_text(), e["title"], e["url"], e["kind"])
+        ps = chunk_text(f.read_text(encoding="utf-8"), e["title"], e["url"], e["kind"])
         if not ps:
             raise ValueError(f"Source yielded no passages: {e['title']} ({e['file']})")
         passages.extend(ps)

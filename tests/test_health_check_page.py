@@ -172,7 +172,10 @@ def test_clear(env):
     assert at.session_state["report"] is None
     assert at.session_state["pipeline"].contract is None
     assert not at.session_state["chat"]
+    assert at.session_state["context"] is None
     assert len(at.expander) == 0
+    assert at.file_uploader[0].value is None
+    assert at.button(key="analyze").disabled
 
 
 def test_no_contract_text_in_logs(env, capsys, caplog):

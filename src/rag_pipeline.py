@@ -76,7 +76,7 @@ class VectorStore:
     def save(self, directory: str) -> None:
         d = Path(directory)
         d.mkdir(parents=True, exist_ok=True)
-        with open(d / "passages.jsonl", "w") as f:
+        with open(d / "passages.jsonl", "w", encoding="utf-8") as f:
             for p in self.passages:
                 f.write(p.model_dump_json() + "\n")
         np.save(d / "vectors.npy", self.vectors)
@@ -88,7 +88,7 @@ class VectorStore:
         for f in (pf, vf):
             if not f.exists():
                 raise FileNotFoundError(f"Knowledge base file missing: {f}")
-        passages = [Passage.model_validate(json.loads(line)) for line in pf.read_text().splitlines() if line.strip()]
+        passages = [Passage.model_validate(json.loads(line)) for line in pf.read_text(encoding="utf-8").splitlines() if line.strip()]
         return cls(passages, np.load(vf))
 
 

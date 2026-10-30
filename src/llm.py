@@ -55,6 +55,9 @@ class OpenAIClient:
             )
         except openai.OpenAIError as e:
             raise _api_error("generating a structured response", e) from e
+        except Exception:
+            # Schema-invalid output (pydantic ValidationError) embeds input snippets; do not chain it.
+            raise LLMError("The language model returned a malformed structured result.") from None
         message = resp.choices[0].message
         if getattr(message, "refusal", None):
             raise LLMError("The language model declined to answer this request.")

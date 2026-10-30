@@ -150,3 +150,22 @@ def test_status_outside_three_values_rejected():
     with pytest.raises(ValidationError):
         Finding(term="t", status="Bad", wording=None, page=None, explanation="", reason="",
                 sources=[], question=None)
+
+
+@pytest.mark.parametrize("make_exc", [
+    lambda: _validation_error(),
+    lambda: ValueError("secret contract text"),
+])
+def test_structured_malformed_output_becomes_llm_error(make_exc):
+    with pytest.raises(LLMError) as ei:
+        OpenAIClient(client=StubSDK(exc=make_exc())).structured("s", "u", Out)
+    assert "malformed" in str(ei.value)
+    assert "secret contract text" not in str(ei.value)
+    assert ei.value.__cause__ is None and ei.value.__suppress_context__
+
+
+def _validation_error():
+    try:
+        Out.model_validate({"x": "secret contract text"})
+    except ValidationError as e:
+        return e

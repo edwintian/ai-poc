@@ -115,3 +115,8 @@ def test_error_history_unchanged(env, exc):
     assert len(at.error) == 1 and "secret-detail" not in at.error[0].value
     assert at.session_state["chat"] == []
     assert len(at.chat_message) == 0
+
+
+def test_openai_notice_shown(env):
+    at = make()
+    assert any("sent to OpenAI" in c.value for c in at.caption)

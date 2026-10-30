@@ -37,6 +37,7 @@ def _reset_contract() -> None:
     if pipeline is not None:
         pipeline.clear_contract()
     st.session_state["chat"] = []
+    st.session_state["context"] = None
 
 
 def _label(key: str) -> str:
@@ -51,7 +52,9 @@ st.title("Contract Health Check")
 st.write("Upload an employment contract to see how its key terms compare with Singapore law and MOM guidance.")
 st.info("The contract text is sent to OpenAI for analysis and is not stored after your session ends.")
 
-uploaded = st.file_uploader("Employment contract (PDF)", type=["pdf"])
+uploaded = st.file_uploader(
+    "Employment contract (PDF)", type=["pdf"], key=f"upload_{st.session_state.setdefault('upload_n', 0)}"
+)
 category = st.selectbox("Employment category", CATEGORIES, index=0)
 salary = st.number_input(
     "Monthly basic salary (optional, S$)", min_value=0.0, value=None, step=100.0,
@@ -131,4 +134,5 @@ if report is not None or (pipeline is not None and pipeline.contract is not None
     if st.button("Clear contract & results", key="clear"):
         st.session_state["report"] = None
         _reset_contract()
+        st.session_state["upload_n"] += 1  # new key empties the uploader
         st.rerun()
