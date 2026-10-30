@@ -55,4 +55,4 @@ def test_methodology_lists_all_adrs_by_number_and_title():
     for f in files:
         first = f.read_text(encoding="utf-8").splitlines()[0]
         num, title = re.match(r"# (\d{4}) – (.*)", first).groups()
-        assert f"{num}" in text and title in text
+        assert f"ADR {num}" in text and title in text

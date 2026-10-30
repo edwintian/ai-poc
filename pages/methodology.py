@@ -19,10 +19,11 @@ digraph G {
     assess [label="Assess term"];
     guard [label="Evidence check"];
     retrieve -> missing;
-    missing -> recover [label="yes"];
+    missing -> recover [label="yes, and contract\\npassages found"];
     recover -> verify2 -> rules;
-    missing -> rules [label="no"];
+    missing -> rules [label="no (or no contract\\npassages)"];
     rules -> assess -> guard;
+    retrieve -> assess [label="evidence", style=dotted];
   }
   report [label="Findings report"];
   verify1 -> retrieve;
@@ -75,7 +76,7 @@ st.markdown(
 the 11 terms with a verbatim quote for each, and every quote is checked against
 the contract text. For each term, the app retrieves official passages (the Act
 and MOM guidance) and passages from the contract. A term the extraction missed
-gets a second chance. The rules engine then applies fixed checks where the
+gets a second chance (only when matching contract passages were retrieved). The rules engine then applies fixed checks where the
 law gives a clear number, and the model assesses the rest. A final evidence
 check turns any finding without official support into Unable to Assess.
 
@@ -91,13 +92,17 @@ st.markdown(
     """
 - **Parser:** extracts text per page from the PDF and rejects invalid or
   empty files with a clear message.
-- **Chunking:** sources are split by heading and long sections are packed into passages of limited length, giving
-  305 passages. The contract is chunked per session, keeping page numbers.
+- **Chunking:** sources are split by heading, giving 305 passages.
+  - Official passages are at most 1,500 characters; contract passages at
+    most 1,200.
+  - Long text is split by paragraph, then by sentence, then by a hard cut.
+  - The contract is chunked per session, keeping page numbers.
+- **Page limit:** contracts of more than 40 pages are rejected.
 - **Embeddings:** OpenAI `text-embedding-3-small`.
 - **Vector store:** FAISS inner product on normalised vectors (cosine
   similarity). The knowledge base index is read-only and shared; each
   session has its own contract index.
-- **Retrieval:** a fixed query per term, enriched with the contract's own
+- **Retrieval:** 3 contract and 4 official passages per query, using a fixed query per term, enriched with the contract's own
   wording. Minimum scores are 0.25 for the health check and, for Q&A, 0.27 for
   contract passages and 0.40 for official ones. These came from a check on
   2026-10-30 where 7 of 7 on-topic questions were answered and 7 of 7
@@ -112,7 +117,8 @@ st.markdown(
   using structured outputs, so malformed replies are rejected, not guessed at.
   The statuses are defined in the assessment prompt.
 - **Guards:** quote verification, the two-way evidence guard, and
-  grounding checks in code for Q&A. Untrusted text is escaped in the UI.
+  grounding checks in code for Q&A. Untrusted text is escaped in the UI and inside prompts.
+  Q&A keeps the last 6 turns of history.
 - **Parallelism:** terms are assessed with 4 workers. Progress is reported
   from the main script thread.
 - **Session state:** the contract, index and results live in the session only.
