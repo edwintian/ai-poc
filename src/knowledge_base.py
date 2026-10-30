@@ -14,12 +14,12 @@ def slug(s: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", s.lower()).strip("-")
 
 
-def _pack(pieces: list[str], sep: str) -> list[str]:
+def _pack(pieces: list[str], sep: str, max_chars: int = MAX_CHARS) -> list[str]:
     out: list[str] = []
     cur = ""
     for p in pieces:
         cand = f"{cur}{sep}{p}" if cur else p
-        if len(cand) <= MAX_CHARS:
+        if len(cand) <= max_chars:
             cur = cand
         else:
             if cur:
@@ -30,19 +30,19 @@ def _pack(pieces: list[str], sep: str) -> list[str]:
     return out
 
 
-def _split_body(body: str) -> list[str]:
-    if len(body) <= MAX_CHARS:
+def _split_body(body: str, max_chars: int = MAX_CHARS) -> list[str]:
+    if len(body) <= max_chars:
         return [body]
     out: list[str] = []
-    for chunk in _pack([p for p in re.split(r"\n\s*\n", body) if p.strip()], "\n\n"):
-        if len(chunk) <= MAX_CHARS:
+    for chunk in _pack([p for p in re.split(r"\n\s*\n", body) if p.strip()], "\n\n", max_chars):
+        if len(chunk) <= max_chars:
             out.append(chunk)
             continue
         sentences = [s for s in re.split(r"(?<=[.!?])\s+", chunk) if s]
-        for sub in _pack(sentences, " "):
-            while len(sub) > MAX_CHARS:  # last resort: a single oversize sentence
-                out.append(sub[:MAX_CHARS])
-                sub = sub[MAX_CHARS:]
+        for sub in _pack(sentences, " ", max_chars):
+            while len(sub) > max_chars:  # last resort: a single oversize sentence
+                out.append(sub[:max_chars])
+                sub = sub[max_chars:]
             if sub:
                 out.append(sub)
     return out

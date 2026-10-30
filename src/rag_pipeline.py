@@ -6,7 +6,7 @@ import numpy as np
 import openai
 
 from src.config import get_secret
-from src.schemas import Hit, Passage
+from src.schemas import Evidence, Hit, Page, Passage, Source
 
 
 class RetrievalError(Exception):
@@ -90,3 +90,88 @@ class VectorStore:
                 raise FileNotFoundError(f"Knowledge base file missing: {f}")
         passages = [Passage.model_validate(json.loads(line)) for line in pf.read_text().splitlines() if line.strip()]
         return cls(passages, np.load(vf))
+
+
+CONTRACT_MAX_CHARS = 1200
+_RETRIEVAL_FAILED = "Retrieval failed: could not embed the query."
+
+
+def chunk_contract(pages: list[Page]) -> list[Passage]:
+    from src.knowledge_base import _split_body
+
+    out: list[Passage] = []
+    for page in pages:
+        body = page.text.strip()
+        if not body:
+            continue
+        for i, piece in enumerate(_split_body(body, CONTRACT_MAX_CHARS)):
+            out.append(Passage(
+                id=f"contract-p{page.number}-{i}", kind="contract", title="Contract",
+                citation=f"Contract, p. {page.number}", url=None, page=page.number, text=piece,
+            ))
+    return out
+
+
+class RagPipeline:
+    def __init__(self, kb: VectorStore, embedder):
+        self.kb = kb  # read-only; never mutated (ADR 0009)
+        self.embedder = embedder
+        self.contract: VectorStore | None = None
+
+    def index_contract(self, pages: list[Page]) -> None:
+        passages = chunk_contract(pages)
+        if not passages:
+            self.contract = None
+            return
+        vectors = np.asarray(self.embedder.embed([p.text for p in passages]), dtype=np.float32)
+        self.contract = VectorStore(passages, vectors)
+
+    def clear_contract(self) -> None:
+        self.contract = None
+
+    def retrieve(self, query: str, k_contract: int = 3, k_official: int = 4, min_score: float = 0.25) -> Evidence:
+        if not query or not query.strip():
+            return Evidence(contract=[], official=[])
+        try:
+            qvec = np.asarray(self.embedder.embed([query]), dtype=np.float32)[0]
+        except RetrievalError:
+            raise
+        except Exception as e:
+            raise RetrievalError(_RETRIEVAL_FAILED) from e
+        contract = self.contract.search(qvec, k_contract, min_score) if self.contract else []
+        return Evidence(contract=contract, official=self.kb.search(qvec, k_official, min_score))
+
+
+def to_source(p: Passage) -> Source | None:
+    if p.kind == "contract" or not p.url:
+        return None
+    return Source(title=p.title, url=p.url, citation=p.citation)
+
+
+_KIND_LABEL = {"law": "Statute", "guidance": "MOM guidance", "contract": "Contract"}
+
+
+def format_evidence(e: Evidence) -> str:
+    def block(hits: list[Hit]) -> str:
+        if not hits:
+            return "(none)"
+        return "\n\n".join(
+            f"[{h.passage.id}] {_KIND_LABEL[h.passage.kind]} - {h.passage.citation}\n{h.passage.text}"
+            for h in hits
+        )
+
+    return f"Contract passages:\n{block(e.contract)}\n\nOfficial sources:\n{block(e.official)}"
+
+
+def resolve_sources(ids: list[str], e: Evidence) -> list[Source]:
+    by_id = {h.passage.id: h.passage for h in e.official}
+    out: list[Source] = []
+    seen: set[str] = set()
+    for i in ids:
+        if i in seen or i not in by_id:
+            continue
+        seen.add(i)
+        src = to_source(by_id[i])
+        if src:
+            out.append(src)
+    return out
