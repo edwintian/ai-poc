@@ -78,3 +78,29 @@ def test_fetch_all(tmp_path):
     assert written == ["a.txt"]
     assert (out / "a.txt").read_text(encoding="utf-8").startswith("# Annual leave")
     assert not (out / "b.txt").exists()
+
+
+NESTED = """<html><body><div class="page-content"><h1>Title heading</h1>
+<ul><li>Outer item alpha<ul><li>Inner item beta</li><li>Inner item gamma</li></ul></li></ul>
+<table><tr><td>14</td><td>Type of leave, such as:<ul><li>Annual leave</li><li>Sick leave</li></ul></td></tr></table>
+<p>See <a href="/x">the rules</a>.</p>
+</div></body></html>"""
+
+
+def test_nested_blocks_emitted_once():
+    out = html_to_text(NESTED)
+    for piece in ("Outer item alpha", "Inner item beta", "Inner item gamma",
+                  "Annual leave", "Sick leave", "Type of leave"):
+        assert out.count(piece) == 1, piece
+    assert "- Outer item alpha" in out.splitlines()
+    assert "- Inner item beta" in out.splitlines()
+    assert "14 | Type of leave, such as:" in out.splitlines()
+    assert "See the rules." in out.splitlines()
+
+
+def test_leading_hash_guard():
+    out = html_to_text('<html><body><div class="page-content"><h1>T</h1><p># not a heading</p>'
+                       '<ul><li>## nor this</li></ul></div></body></html>')
+    heads = [ln for ln in out.splitlines() if ln.startswith("#")]
+    assert heads == ["# T"]
+    assert "not a heading" in out and "nor this" in out

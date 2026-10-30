@@ -37,7 +37,7 @@ def act_html_to_text(html: str) -> str:
         for line in sec.get_text().split("\n"):
             line = _clean(line)
             if line:
-                out.append(line)
+                out.append(line.lstrip("#").lstrip())
     return "\n".join(out) + "\n"
 
 

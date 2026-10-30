@@ -16,6 +16,30 @@ class FetchError(Exception):
 
 _DROP = ["nav", "footer", "aside", "script", "style"]
 _BLOCKS = {"h1", "h2", "h3", "h4", "p", "li", "tr"}
+_SKIP = _BLOCKS | {"ul", "ol", "table"}
+
+
+def _guard(line: str) -> str:
+    """Strip leading '#' from body lines so chunk_text sees no spurious headings."""
+    return line.lstrip("#").lstrip()
+
+
+def _own_text(el) -> str:
+    """Text of el excluding any nested block element (those are emitted separately)."""
+    parts: list[str] = []
+
+    def walk(node):
+        for child in node.children:
+            if isinstance(child, NavigableString):
+                parts.append(str(child))
+            elif child.name not in _SKIP:
+                parts.append(" ")
+                walk(child)
+                parts.append(" ")
+
+    walk(el)
+    txt = _clean("".join(parts))
+    return re.sub(r"\s+([.,;:!?])", r"\1", txt)
 
 
 def _clean(s: str) -> str:
@@ -39,20 +63,18 @@ def html_to_text(html: str) -> str:
     lines: list[str] = []
     for el in root.find_all(list(_BLOCKS)):
         if el.name in ("h1", "h2", "h3", "h4"):
-            txt = _clean(el.get_text(" "))
+            txt = _own_text(el)
             if txt:
                 lines.append(f"# {txt}")
         elif el.name == "tr":
-            cells = [_clean(c.get_text(" ")) for c in el.find_all(["td", "th"])]
+            cells = [_own_text(c) for c in el.find_all(["td", "th"]) if c.find_parent("tr") is el]
             cells = [c for c in cells if c]
             if cells:
-                lines.append(" | ".join(cells))
+                lines.append(_guard(" | ".join(cells)))
         else:
-            if el.name == "p" and el.find_parent(["td", "th"]):
-                continue
-            txt = _clean(el.get_text(" "))
+            txt = _own_text(el)
             if txt:
-                lines.append(f"- {txt}" if el.name == "li" else txt)
+                lines.append(f"- {_guard(txt)}" if el.name == "li" else _guard(txt))
     return "\n".join(lines)
 
 
