@@ -6,6 +6,7 @@ from src import document_parser as dp
 from src import llm as llm_mod
 from src import rag_pipeline as rp
 from src.schemas import EmploymentContext
+from src.ui import md_escape
 
 KB_DIR = "data/knowledge_base"
 NOT_FOUND = "Not found in contract"
@@ -29,14 +30,6 @@ CATEGORIES = ["Not sure", "Workman", "Non-workman", "Manager or executive"]
 def load_kb():
     # Read-only knowledge base only; never cache anything holding contract data (ADR 0009).
     return rp.VectorStore.load(KB_DIR)
-
-
-_MD_SPECIALS = set("\\`*_{}[]()#+-.!|<>$~")
-
-
-def _md_escape(text: str) -> str:
-    """Backslash-escape markdown specials so untrusted text renders literally."""
-    return "".join("\\" + c if c in _MD_SPECIALS else c for c in text)
 
 
 def _reset_contract() -> None:
@@ -124,13 +117,13 @@ if report is not None:
                 st.markdown(f"**Contract wording:** {NOT_FOUND}")
             else:
                 page = f" (page {f.page})" if f.page is not None else ""
-                st.markdown(f"**Contract wording:** {_md_escape(f.wording)}{page}")
-            st.markdown(f"**Explanation:** {_md_escape(f.explanation)}")
-            st.markdown(f"**Reason:** {_md_escape(f.reason)}")
+                st.markdown(f"**Contract wording:** {md_escape(f.wording)}{page}")
+            st.markdown(f"**Explanation:** {md_escape(f.explanation)}")
+            st.markdown(f"**Reason:** {md_escape(f.reason)}")
             if f.sources:
-                st.markdown("**Sources:**\n" + "\n".join(f"- [{_md_escape(s.citation)}]({s.url})" for s in f.sources))
+                st.markdown("**Sources:**\n" + "\n".join(f"- [{md_escape(s.citation)}]({s.url})" for s in f.sources))
             if f.question:
-                st.markdown(f"**Question to ask:** {_md_escape(f.question)}")
+                st.markdown(f"**Question to ask:** {md_escape(f.question)}")
     st.caption(report.disclaimer)
 
 pipeline = st.session_state.get("pipeline")
