@@ -1,0 +1,431 @@
+{
+  "clear_terms": {
+    "_context": {
+      "category": "Workman",
+      "monthly_basic_salary": 3000
+    },
+    "salary_payment": {
+      "found": true,
+      "page": 1,
+      "phrase": "monthly basic salary of S$2,400",
+      "status": [
+        "Consistent",
+        "Unable to Assess"
+      ]
+    },
+    "working_hours": {
+      "found": true,
+      "page": 1,
+      "phrase": "44 hours per week",
+      "status": "Consistent"
+    },
+    "overtime": {
+      "found": true,
+      "page": 1,
+      "phrase": "1.5 times the Employee's hourly basic rate",
+      "status": "Consistent"
+    },
+    "annual_leave": {
+      "found": true,
+      "page": 2,
+      "phrase": "14 days of paid annual leave",
+      "status": "Consistent"
+    },
+    "sick_leave": {
+      "found": true,
+      "page": 2,
+      "phrase": "14 days of paid outpatient sick leave",
+      "status": [
+        "Consistent",
+        "Unable to Assess"
+      ]
+    },
+    "probation": {
+      "found": true,
+      "page": 1,
+      "phrase": "probation period of 3 months",
+      "status": [
+        "Consistent",
+        "Unable to Assess"
+      ]
+    },
+    "notice_period": {
+      "found": true,
+      "page": 2,
+      "phrase": "one month's written notice",
+      "status": [
+        "Consistent",
+        "Unable to Assess"
+      ]
+    },
+    "deductions": {
+      "found": true,
+      "page": 2,
+      "phrase": "only deductions from salary",
+      "status": [
+        "Consistent",
+        "Unable to Assess"
+      ]
+    },
+    "termination": {
+      "found": true,
+      "page": 2,
+      "phrase": "without notice for misconduct",
+      "status": [
+        "Consistent",
+        "Unable to Assess"
+      ]
+    },
+    "confidentiality": {
+      "found": true,
+      "page": 1,
+      "phrase": "Confidentiality. The Employee shall not",
+      "status": "Unable to Assess"
+    },
+    "non_compete": {
+      "found": true,
+      "page": 2,
+      "phrase": "Non-Competition.",
+      "status": "Unable to Assess"
+    }
+  },
+  "missing_terms": {
+    "_context": {
+      "category": "Workman",
+      "monthly_basic_salary": 3000
+    },
+    "salary_payment": {
+      "found": true,
+      "page": 1,
+      "phrase": "monthly basic salary is S$1,900",
+      "status": [
+        "Consistent",
+        "Unable to Assess"
+      ]
+    },
+    "working_hours": {
+      "found": true,
+      "page": 1,
+      "phrase": "8am to 5pm, Monday to Friday",
+      "status": [
+        "Consistent",
+        "Unable to Assess"
+      ]
+    },
+    "overtime": {
+      "found": false,
+      "page": null,
+      "status": "Needs Attention"
+    },
+    "annual_leave": {
+      "found": false,
+      "page": null,
+      "status": "Unable to Assess"
+    },
+    "sick_leave": {
+      "found": true,
+      "page": 1,
+      "phrase": "paid sick leave in accordance with the Employment Act",
+      "status": [
+        "Unable to Assess",
+        "Needs Attention"
+      ]
+    },
+    "probation": {
+      "found": true,
+      "page": 1,
+      "phrase": "probation for the first 3 months",
+      "status": [
+        "Unable to Assess",
+        "Needs Attention"
+      ]
+    },
+    "notice_period": {
+      "found": false,
+      "page": null,
+      "status": [
+        "Unable to Assess",
+        "Needs Attention"
+      ]
+    },
+    "deductions": {
+      "found": false,
+      "page": null,
+      "status": [
+        "Unable to Assess",
+        "Needs Attention"
+      ]
+    },
+    "termination": {
+      "found": true,
+      "page": 2,
+      "phrase": "dismiss you for serious misconduct",
+      "status": [
+        "Unable to Assess",
+        "Needs Attention"
+      ]
+    },
+    "confidentiality": {
+      "found": true,
+      "page": 2,
+      "phrase": "keep the Company's recipes",
+      "status": "Unable to Assess"
+    },
+    "non_compete": {
+      "found": false,
+      "page": null,
+      "status": "Unable to Assess"
+    }
+  },
+  "ambiguous": {
+    "_context": {
+      "category": "Non-workman",
+      "monthly_basic_salary": 2200
+    },
+    "salary_payment": {
+      "found": true,
+      "page": 1,
+      "phrase": "monthly basic salary is S$2,200",
+      "status": [
+        "Unable to Assess",
+        "Needs Attention"
+      ]
+    },
+    "working_hours": {
+      "found": true,
+      "page": 1,
+      "phrase": "such hours as required by business needs",
+      "status": "Unable to Assess"
+    },
+    "overtime": {
+      "found": true,
+      "page": 1,
+      "phrase": "compensated at the Company's discretion",
+      "status": "Unable to Assess"
+    },
+    "annual_leave": {
+      "found": true,
+      "page": 1,
+      "phrase": "as determined by management",
+      "status": "Unable to Assess"
+    },
+    "sick_leave": {
+      "found": true,
+      "page": 2,
+      "phrase": "subject to the Company's policies",
+      "status": [
+        "Unable to Assess",
+        "Needs Attention"
+      ]
+    },
+    "probation": {
+      "found": false,
+      "page": null,
+      "status": "Unable to Assess"
+    },
+    "notice_period": {
+      "found": true,
+      "page": 2,
+      "phrase": "giving reasonable notice",
+      "status": [
+        "Unable to Assess",
+        "Needs Attention"
+      ]
+    },
+    "deductions": {
+      "found": false,
+      "page": null,
+      "status": [
+        "Unable to Assess",
+        "Needs Attention"
+      ]
+    },
+    "termination": {
+      "found": true,
+      "page": 2,
+      "phrase": "at any time if business conditions require",
+      "status": [
+        "Unable to Assess",
+        "Needs Attention"
+      ]
+    },
+    "confidentiality": {
+      "found": false,
+      "page": null,
+      "status": "Unable to Assess"
+    },
+    "non_compete": {
+      "found": false,
+      "page": null,
+      "status": "Unable to Assess"
+    }
+  },
+  "heavy_deductions": {
+    "_context": {
+      "category": "Non-workman",
+      "monthly_basic_salary": 2100
+    },
+    "salary_payment": {
+      "found": true,
+      "page": 1,
+      "phrase": "paid by the 7th day of the following month",
+      "status": [
+        "Consistent",
+        "Unable to Assess"
+      ]
+    },
+    "working_hours": {
+      "found": true,
+      "page": 1,
+      "phrase": "44 hours per week",
+      "status": "Consistent"
+    },
+    "overtime": {
+      "found": true,
+      "page": 1,
+      "phrase": "1.5 times the hourly basic rate",
+      "status": "Consistent"
+    },
+    "annual_leave": {
+      "found": true,
+      "page": 1,
+      "phrase": "7 days of paid annual leave",
+      "status": "Needs Attention"
+    },
+    "sick_leave": {
+      "found": true,
+      "page": 2,
+      "phrase": "paid sick leave and hospitalisation leave",
+      "status": [
+        "Unable to Assess",
+        "Needs Attention"
+      ]
+    },
+    "probation": {
+      "found": false,
+      "page": null,
+      "status": "Unable to Assess"
+    },
+    "notice_period": {
+      "found": true,
+      "page": 2,
+      "phrase": "one month's written notice",
+      "status": [
+        "Consistent",
+        "Unable to Assess"
+      ]
+    },
+    "deductions": {
+      "found": true,
+      "page": 2,
+      "phrase": "liquidated damages",
+      "status": "Needs Attention"
+    },
+    "termination": {
+      "found": false,
+      "page": null,
+      "status": [
+        "Unable to Assess",
+        "Needs Attention"
+      ]
+    },
+    "confidentiality": {
+      "found": true,
+      "page": 2,
+      "phrase": "keep all customer data confidential",
+      "status": "Unable to Assess"
+    },
+    "non_compete": {
+      "found": false,
+      "page": null,
+      "status": "Unable to Assess"
+    }
+  },
+  "varied_notice_leave": {
+    "_context": {
+      "category": "Non-workman",
+      "monthly_basic_salary": 5800
+    },
+    "salary_payment": {
+      "found": true,
+      "page": 1,
+      "phrase": "paid on the 25th day of each month",
+      "status": [
+        "Consistent",
+        "Unable to Assess"
+      ]
+    },
+    "working_hours": {
+      "found": true,
+      "page": 1,
+      "phrase": "Monday to Friday, 9am to 6pm",
+      "status": "Unable to Assess"
+    },
+    "overtime": {
+      "found": false,
+      "page": null,
+      "status": "Unable to Assess"
+    },
+    "annual_leave": {
+      "found": true,
+      "page": 2,
+      "phrase": "18 days of paid annual leave",
+      "status": "Consistent"
+    },
+    "sick_leave": {
+      "found": true,
+      "page": 2,
+      "phrase": "14 days of outpatient sick leave",
+      "status": [
+        "Consistent",
+        "Unable to Assess"
+      ]
+    },
+    "probation": {
+      "found": true,
+      "page": 1,
+      "phrase": "probation period is 6 months",
+      "status": [
+        "Consistent",
+        "Unable to Assess",
+        "Needs Attention"
+      ]
+    },
+    "notice_period": {
+      "found": true,
+      "page": 2,
+      "phrase": "2 months' written notice",
+      "status": [
+        "Consistent",
+        "Unable to Assess"
+      ]
+    },
+    "deductions": {
+      "found": false,
+      "page": null,
+      "status": [
+        "Unable to Assess",
+        "Needs Attention"
+      ]
+    },
+    "termination": {
+      "found": false,
+      "page": null,
+      "status": [
+        "Unable to Assess",
+        "Needs Attention"
+      ]
+    },
+    "confidentiality": {
+      "found": true,
+      "page": 2,
+      "phrase": "not disclose any confidential information",
+      "status": "Unable to Assess"
+    },
+    "non_compete": {
+      "found": false,
+      "page": null,
+      "status": "Unable to Assess"
+    }
+  }
+}
