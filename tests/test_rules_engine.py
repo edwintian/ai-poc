@@ -132,3 +132,42 @@ def test_no_legal_wording_anywhere():
             r = rule_for(t, c)
             assert "legal" not in r.reason.lower()
     assert "legal" not in OVERTIME_NOT_FOUND_REASON.lower()
+
+
+@pytest.mark.parametrize("h", [0, -5])
+def test_non_positive_hours_unable(h):
+    r = rule_for(T("working_hours", weekly_hours=h), COVERED)
+    assert r.status == "Unable to Assess" and r.reason == HOURS_UNCLEAR_REASON
+
+
+@pytest.mark.parametrize("m", [0, -1.5])
+def test_non_positive_overtime_unable(m):
+    r = rule_for(T("overtime", overtime_multiplier=m), COVERED)
+    assert r.status == "Unable to Assess" and "couldn't determine the overtime rate" in r.reason
+
+
+def test_negative_leave_unable():
+    r = rule_for(T("annual_leave", annual_leave_days=-3), COVERED)
+    assert r.status == "Unable to Assess" and "couldn't determine" in r.reason
+
+
+@pytest.mark.parametrize("cat", ["Workman", "Non-workman"])
+@pytest.mark.parametrize("sal", [0, -100])
+def test_non_positive_salary_unknown(cat, sal):
+    assert part4_applies(EmploymentContext(category=cat, monthly_basic_salary=sal)) is None
+
+
+def test_leave_boundaries():
+    r = rule_for(T("annual_leave", annual_leave_days=7), COVERED)
+    assert r.status == "Needs Attention" and "rises by one day per year of service" in r.reason
+    assert rule_for(T("annual_leave", annual_leave_days=13), COVERED).status == "Needs Attention"
+
+
+def test_manager_without_salary_is_not_covered():
+    assert part4_applies(EmploymentContext(category="Manager or executive")) is False
+
+
+def test_unknown_coverage_reason_wording():
+    r = rule_for(T("working_hours", weekly_hours=40), EmploymentContext())
+    assert "We need your employee category and monthly basic salary" in r.reason
+    assert "Minister" in r.reason

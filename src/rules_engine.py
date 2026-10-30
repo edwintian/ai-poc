@@ -38,7 +38,7 @@ NO_PART4_REASON = (
 )
 UNKNOWN_COVERAGE_REASON = (
     "Whether Part 4 of the Employment Act (hours and overtime) applies depends on your employee category "
-    "and monthly basic salary. Tell us your employee category and monthly basic salary to assess this. "
+    "and monthly basic salary. We need your employee category and monthly basic salary to tell whether these rules apply to you. "
     + _CEILING_NOTE
 )
 
@@ -48,7 +48,7 @@ def part4_applies(ctx: EmploymentContext) -> bool | None:
     if ctx.category == "Manager or executive":
         return False
     sal = ctx.monthly_basic_salary
-    if sal is None:
+    if sal is None or sal <= 0:
         return None
     if ctx.category == "Workman":
         return sal <= WORKMAN_SALARY_CEILING
@@ -80,7 +80,7 @@ def _hours(t: ExtractedTerm, ctx: EmploymentContext) -> RuleResult:
     if not t.found:
         return _res("working_hours", "Unable to Assess",
                     "We couldn't find a working hours clause in the contract.", ["ema-s38"])
-    if t.weekly_hours is None:
+    if t.weekly_hours is None or t.weekly_hours <= 0:
         return _res("working_hours", "Unable to Assess", HOURS_UNCLEAR_REASON, ["ema-s38"])
     read = f"We read your contract as {_num(t.weekly_hours)} hours a week, excluding meal and rest breaks"
     if t.weekly_hours <= MAX_WEEKLY_HOURS:
@@ -99,7 +99,7 @@ def _overtime(t: ExtractedTerm, ctx: EmploymentContext) -> RuleResult:
     gate = _coverage_gate("overtime", applies)
     if gate:
         return gate
-    if t.overtime_multiplier is None:
+    if t.overtime_multiplier is None or t.overtime_multiplier <= 0:
         return _res("overtime", "Unable to Assess",
                     "We couldn't determine the overtime rate from the contract wording.", ["ema-s38"])
     m = _num(t.overtime_multiplier)
@@ -118,7 +118,7 @@ def _annual_leave(t: ExtractedTerm, ctx: EmploymentContext) -> RuleResult:
         return _res("annual_leave", "Unable to Assess",
                     "We couldn't find an annual leave clause in the contract.", ids)
     d = t.annual_leave_days
-    if d is None:
+    if d is None or d < 0:
         return _res("annual_leave", "Unable to Assess",
                     "We couldn't determine the number of annual leave days from the contract wording.", ids)
     if d >= ANNUAL_LEAVE_MAX:
