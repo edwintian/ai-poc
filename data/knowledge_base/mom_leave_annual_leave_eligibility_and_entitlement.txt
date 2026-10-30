@@ -1,0 +1,54 @@
+# Annual leave eligibility and entitlement
+If you are covered by the Employment Act and have worked for at least 3 months, you are entitled to annual leave.
+# Eligibility
+You are entitled to paid annual leave if you have worked for your employer for at least 3 months.
+You can only apply for annual leave after working for 3 months.
+# Entitlement
+Your annual leave entitlement depends on how many years of service you have with your employer. Your year of service begins from the day you start work with your employer.
+Year of service | Days of leave
+1 st | 7
+2 nd | 8
+3 rd | 9
+4 th | 10
+5 th | 11
+6 th | 12
+7 th | 13
+8 th and thereafter | 14
+If an employee begins work on 14 March 2013, the annual leave entitlement will be calculated as follows:
+Period of employment | Completed months of service | Annual leave entitlement
+14 Mar 2013 to 13 Mar 2014 | 12 | 7 days (1 st year)
+14 Mar 2014 to 13 Mar 2015 | 12 | 8 days (2 nd year)
+14 Mar 2015 to 13 Mar 2016 | 12 | 9 days (3 rd year)
+# Pro-rated leave
+If you worked | Your annual leave is pro-rated
+3 to 12 months
+Based on the number of completed months you have worked.
+This applies even if you’re still on probation.
+More than a year | Based on the number of completed months you worked in your current year.
+# Calculate your pro-rated annual leave
+By using this service, you agree to accept the terms of use.
+# How pro-rated annual leave is calculated
+Annual leave is pro-rated using this formula:
+- (Number of completed months of service ÷ 12 months) × Number of days of annual leave entitlement
+Note:
+- If the fraction of a day is less than one-half, round it down.
+- If it is half or more, round it up to one day.
+If an employee started work on 14 Mar 2014 and left service on 31 Jul 2014, the number of completed months of service is:
+14 Mar 2014 to 13 Jul 2014 = 4 completed months
+The period from 14 to 31 July 2014 is disregarded as it is not a completed month.
+If an employee has completed 4 months of service and is entitled to 10 days of leave a year, the pro-rated annual leave is:
+(4 completed months ÷ 12 months) × 10 days of leave = 3.33 days
+Rounded down to 3 days as the fraction is less than 0.5.
+# If you are taking unpaid leave
+You should exclude periods of approved unpaid leave when calculating your annual leave entitlement.
+If you have taken unpaid leave, your employer can pro-rate your leave entitlement based on how many complete months you have worked.
+An employee is entitled to 12 days of annual leave. The employee takes 1 day unpaid leave per month from January to April, i.e. 4 days in total.
+The employee's pro-rated annual leave entitlement from 1 January to 30 April will be based on 3 completed months of service.
+The number of pro-rated annual leave is 3 days:
+(3 completed months ÷ 12 months) × 12 days of leave = 3 days
+# If you are serving notice
+If you have resigned, your notice period is included when calculating your pro-rated annual leave.
+An employee is entitled to 12 days of annual leave and took 2 weeks of unpaid leave in March. Subsequently, the employee resigned on 1 August and is serving 1 month’s notice.
+The employee's pro-rated annual leave entitlement from 1 January to 31 August excludes the month of March and includes August.
+The number of pro-rated annual leave is 7 days:
+(7 completed months ÷ 12 months) × 12 days of leave = 7 days
