@@ -144,3 +144,16 @@ def test_resolve_sources(kb):
     out = resolve_sources(["nope", e.contract[0].passage.id, oid, oid], e)
     assert len(out) == 1 and out[0].citation == e.official[0].passage.citation
     assert resolve_sources([], e) == []
+
+
+def test_retrieve_per_list_min_score_overrides(kb):
+    pipe = RagPipeline(kb, FakeEmbedder())
+    pipe.index_contract(PAGES)
+    base = pipe.retrieve("notice salary", min_score=0.0)
+    assert base.contract and base.official
+    only_contract_high = pipe.retrieve("notice salary", min_score=0.0, min_score_contract=1.01)
+    assert only_contract_high.contract == [] and only_contract_high.official == base.official
+    only_official_high = pipe.retrieve("notice salary", min_score=0.0, min_score_official=1.01)
+    assert only_official_high.official == [] and only_official_high.contract == base.contract
+    low = pipe.retrieve("notice salary", min_score=1.01, min_score_contract=0.0, min_score_official=0.0)
+    assert low.contract and low.official

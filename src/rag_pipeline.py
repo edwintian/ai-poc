@@ -129,7 +129,10 @@ class RagPipeline:
     def clear_contract(self) -> None:
         self.contract = None
 
-    def retrieve(self, query: str, k_contract: int = 3, k_official: int = 4, min_score: float = 0.25) -> Evidence:
+    def retrieve(
+        self, query: str, k_contract: int = 3, k_official: int = 4, min_score: float = 0.25,
+        min_score_contract: float | None = None, min_score_official: float | None = None,
+    ) -> Evidence:
         if not query or not query.strip():
             return Evidence(contract=[], official=[])
         try:
@@ -138,8 +141,10 @@ class RagPipeline:
             raise
         except Exception as e:
             raise RetrievalError(_RETRIEVAL_FAILED) from e
-        contract = self.contract.search(qvec, k_contract, min_score) if self.contract else []
-        return Evidence(contract=contract, official=self.kb.search(qvec, k_official, min_score))
+        mc = min_score if min_score_contract is None else min_score_contract
+        mo = min_score if min_score_official is None else min_score_official
+        contract = self.contract.search(qvec, k_contract, mc) if self.contract else []
+        return Evidence(contract=contract, official=self.kb.search(qvec, k_official, mo))
 
 
 def to_source(p: Passage) -> Source | None:
@@ -175,3 +180,11 @@ def resolve_sources(ids: list[str], e: Evidence) -> list[Source]:
         if src:
             out.append(src)
     return out
+
+
+def filter_evidence(e: Evidence, ids: list[str]) -> Evidence:
+    keep = set(ids)
+    return Evidence(
+        contract=[h for h in e.contract if h.passage.id in keep],
+        official=[h for h in e.official if h.passage.id in keep],
+    )
