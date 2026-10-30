@@ -35,7 +35,9 @@ class OpenAIEmbedder:
                 resp = client.embeddings.create(model=self.model, input=texts[i:i + self.BATCH])
                 rows.extend(d.embedding for d in resp.data)
         except openai.OpenAIError as e:
-            raise RetrievalError(f"Embedding request failed: {e}") from e
+            status = getattr(e, "status_code", None)
+            detail = f" (HTTP {status})" if status else ""
+            raise RetrievalError(f"Embedding request failed: {type(e).__name__}{detail}") from e
         return np.asarray(rows, dtype=np.float32)
 
 

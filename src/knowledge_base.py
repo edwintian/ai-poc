@@ -84,6 +84,11 @@ def build_kb(manifest_path: str, out_dir: str, embedder) -> int:
         if not ps:
             raise ValueError(f"Source yielded no passages: {e['title']} ({e['file']})")
         passages.extend(ps)
+    seen: dict[str, str] = {}
+    for p in passages:
+        if p.id in seen:
+            raise ValueError(f"Duplicate passage id {p.id!r} (sources: {seen[p.id]!r} and {p.title!r})")
+        seen[p.id] = p.title
     vectors = np.asarray(embedder.embed([p.text for p in passages]), dtype=np.float32)
     VectorStore(passages, vectors).save(out_dir)
     return len(passages)

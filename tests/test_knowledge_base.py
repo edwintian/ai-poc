@@ -146,3 +146,31 @@ def test_embedder_batches():
 def test_embedder_wraps_errors():
     with pytest.raises(RetrievalError):
         OpenAIEmbedder(client=_Client(fail=True)).embed(["a"])
+
+
+def test_embedder_error_message_has_no_secrets():
+    fake_key = "sk-" + "A1b2C3d4E5f6G7h8I9j0K1l2"
+    phrase = "distinctive-confidential-phrase"
+
+    class AuthErr(openai.OpenAIError):
+        status_code = 401
+
+    class Bad:
+        embeddings = SimpleNamespace(
+            create=lambda model, input: (_ for _ in ()).throw(AuthErr(f"Incorrect API key provided: {fake_key} {input}"))
+        )
+
+    with pytest.raises(RetrievalError) as ei:
+        OpenAIEmbedder(client=Bad()).embed([phrase])
+    msg = str(ei.value)
+    assert fake_key not in msg and "sk-" not in msg and phrase not in msg
+    assert "AuthErr" in msg and "401" in msg
+    assert isinstance(ei.value.__cause__, AuthErr)
+
+
+def test_build_kb_duplicate_ids(tmp_path):
+    (tmp_path / "a.txt").write_text(_act())
+    e = {"file": str(tmp_path / "a.txt"), "kind": "law", "title": TITLE, "url": URL, "fetch": "x"}
+    m = _manifest(tmp_path, [e, dict(e)])
+    with pytest.raises(ValueError, match="employment-act-1968-0"):
+        build_kb(m, str(tmp_path / "o"), FakeEmbedder())
