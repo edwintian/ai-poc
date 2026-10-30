@@ -10,7 +10,7 @@ from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from src.llm import LLMError, complete_structured
-from src.rag_pipeline import RetrievalError, format_evidence, resolve_sources
+from src.rag_pipeline import format_evidence, resolve_sources
 from src.rules_engine import RULE_SOURCES, rule_for
 from src.schemas import (
     TERM_KEYS, ContractTerms, EmploymentContext, Evidence, ExtractedTerm, Finding, Hit, Page,
@@ -64,7 +64,8 @@ For each term:
 - overtime_multiplier: the overtime rate as a number of times the hourly basic rate (e.g. 1.5)
   when the contract states it; otherwise null.
 - annual_leave_days: the paid annual leave as a number of days per year when stated; otherwise null.
-Numeric fields not relevant to a term must be null."""
+Numeric fields not relevant to a term must be null. When you give a number, the quoted wording
+must contain it (or the schedule it is worked out from)."""
 
 ASSESSMENT_SYSTEM = f"""You assess one term of a Singapore employment contract against official
 sources (the Employment Act and Ministry of Manpower guidance).
@@ -94,8 +95,48 @@ _QUOTES = str.maketrans({"‘": "'", "’": "'", "“": '"', "”": '"', "–": 
 
 def normalise(s: str) -> str:
     s = unicodedata.normalize("NFKC", s).translate(_QUOTES)
-    s = re.sub(r"\s*-\s*", "", s)  # line-break hyphens ("termi-\nnation") and all other hyphens
+    s = re.sub(r"(?<=\w)-[ \t]*\n\s*(?=\w)", "", s)  # line-break hyphen: "termi-\nnation"
+    s = re.sub(r"\s*-\s*", " ", s)  # other hyphens/dashes separate: "1-5" -> "1 5", never "15"
     return re.sub(r"\s+", " ", s).strip().casefold()
+
+
+_NUMBER_WORDS = [
+    "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve",
+    "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty",
+] + [f"twenty {w}" for w in ["one", "two", "three", "four", "five", "six", "seven", "eight", "nine"]] + [
+    "thirty", "thirty one"]  # index i -> i + 1 (after normalise, "twenty-one" is "twenty one")
+_HALF_PHRASES = ["one and a half", "time and a half"]
+
+
+def _quote_numbers(wording: str) -> tuple[str, set[float]]:
+    q = normalise(wording.replace("1½", "1.5"))
+    return q, {float(n) for n in re.findall(r"\d+(?:\.\d+)?", q)}
+
+
+def _has_word(q: str, phrase: str) -> bool:
+    return re.search(rf"\b{re.escape(phrase)}\b", q) is not None
+
+
+def _figure_in_quote(value: float, wording: str) -> bool:
+    q, nums = _quote_numbers(wording)
+    if float(value) in nums:
+        return True
+    if value == 1.5 and any(_has_word(q, ph) for ph in _HALF_PHRASES):
+        return True
+    return float(value).is_integer() and 1 <= value <= 31 and _has_word(q, _NUMBER_WORDS[int(value) - 1])
+
+
+def _check_figures(term: ExtractedTerm) -> ExtractedTerm:
+    """Keep LLM figures only when the verified quote supports them; the rules turn None into
+    Unable to Assess. weekly_hours may be derived from a schedule, so it only needs some number."""
+    w = term.wording
+    update = {f: None for f in ("annual_leave_days", "overtime_multiplier")
+              if getattr(term, f) is not None and not _figure_in_quote(getattr(term, f), w)}
+    if term.weekly_hours is not None:
+        q, nums = _quote_numbers(w)
+        if not nums and not any(_has_word(q, x) for x in _NUMBER_WORDS):
+            update["weekly_hours"] = None
+    return term.model_copy(update=update) if update else term
 
 
 def _not_found(key: str) -> ExtractedTerm:
@@ -118,13 +159,18 @@ def verify_term(term: ExtractedTerm, pages: list[Page]) -> ExtractedTerm:
     if not needle or idx < 0:
         return _not_found(term.key)
     page = [num for start, num in starts if start <= idx][-1]
-    return term.model_copy(update={"page": page})
+    return _check_figures(term.model_copy(update={"page": page}))
 
 
 # ---------- extraction and recovery ----------
 
+def _escape(text: str) -> str:
+    """Prompt only: stop page text from closing or opening a <contract> block."""
+    return text.replace("<", "&lt;").replace(">", "&gt;")
+
+
 def _contract_blocks(items: list[tuple[int, str]]) -> str:
-    return "\n\n".join(f'<contract page="{n}">\n{text}\n</contract>' for n, text in items)
+    return "\n\n".join(f'<contract page="{n}">\n{_escape(text)}\n</contract>' for n, text in items)
 
 
 def extract_terms(pages: list[Page], llm) -> ContractTerms:
@@ -218,8 +264,8 @@ def _analyse_term(term: ExtractedTerm, pages: list[Page], ctx: EmploymentContext
             except LLMError:
                 pass  # recovery failure leaves the term not found (ADR 0010)
         return assess_term(term, rule_for(term, ctx), evidence, llm)
-    except (LLMError, RetrievalError):
-        return _service_error(term, rule_for(term, ctx))
+    except Exception:  # LLMError, RetrievalError or anything unexpected: contain it to this term,
+        return _service_error(term, rule_for(term, ctx))  # and never show the exception text
 
 
 def analyse(pages: list[Page], ctx: EmploymentContext, pipeline, llm,
