@@ -5,7 +5,7 @@ from src import contract_analyser as ca
 from src import document_parser as dp
 from src import llm as llm_mod
 from src import rag_pipeline as rp
-from src.schemas import EmploymentContext, TERM_KEYS
+from src.schemas import EmploymentContext
 
 KB_DIR = "data/knowledge_base"
 NOT_FOUND = "Not found in contract"
@@ -31,6 +31,21 @@ def load_kb():
     return rp.VectorStore.load(KB_DIR)
 
 
+_MD_SPECIALS = set("\\`*_{}[]()#+-.!|<>$~")
+
+
+def _md_escape(text: str) -> str:
+    """Backslash-escape markdown specials so untrusted text renders literally."""
+    return "".join("\\" + c if c in _MD_SPECIALS else c for c in text)
+
+
+def _reset_contract() -> None:
+    pipeline = st.session_state.get("pipeline")
+    if pipeline is not None:
+        pipeline.clear_contract()
+    st.session_state["chat"] = []
+
+
 def _label(key: str) -> str:
     return TERM_LABELS.get(key, key)
 
@@ -53,7 +68,9 @@ salary = st.number_input(
 
 if st.button("Analyze", key="analyze", type="primary", disabled=uploaded is None):
     st.session_state["report"] = None
+    _reset_contract()
     ctx = EmploymentContext(category=category, monthly_basic_salary=salary)
+    bar = None
     try:
         data = uploaded.getvalue()  # read here only; never kept in session state
         pages = dp.parse_pdf(data)
@@ -75,14 +92,19 @@ if st.button("Analyze", key="analyze", type="primary", disabled=uploaded is None
                             progress=progress)
         st.session_state["report"] = report
         st.session_state["context"] = ctx
-        bar.empty()
     except dp.UnreadableDocument as e:
+        _reset_contract()
         st.error(str(e))
     except ca.NotAContract:
+        _reset_contract()
         st.error("This doesn't look like an employment contract. Please upload a PDF of your "
                  "employment contract.")
     except (llm_mod.LLMError, rp.RetrievalError):
+        _reset_contract()
         st.error("The analysis service is unavailable right now; please try again.")
+    finally:
+        if bar is not None:
+            bar.empty()
 
 report = st.session_state["report"]
 if report is not None:
@@ -102,18 +124,18 @@ if report is not None:
                 st.markdown(f"**Contract wording:** {NOT_FOUND}")
             else:
                 page = f" (page {f.page})" if f.page is not None else ""
-                st.markdown(f"**Contract wording:** {f.wording}{page}")
-            st.markdown(f"**Explanation:** {f.explanation}")
-            st.markdown(f"**Reason:** {f.reason}")
+                st.markdown(f"**Contract wording:** {_md_escape(f.wording)}{page}")
+            st.markdown(f"**Explanation:** {_md_escape(f.explanation)}")
+            st.markdown(f"**Reason:** {_md_escape(f.reason)}")
             if f.sources:
-                st.markdown("**Sources:**\n" + "\n".join(f"- [{s.citation}]({s.url})" for s in f.sources))
+                st.markdown("**Sources:**\n" + "\n".join(f"- [{_md_escape(s.citation)}]({s.url})" for s in f.sources))
             if f.question:
-                st.markdown(f"**Question to ask:** {f.question}")
+                st.markdown(f"**Question to ask:** {_md_escape(f.question)}")
     st.caption(report.disclaimer)
+
+pipeline = st.session_state.get("pipeline")
+if report is not None or (pipeline is not None and pipeline.contract is not None):
     if st.button("Clear contract & results", key="clear"):
         st.session_state["report"] = None
-        pipeline = st.session_state.get("pipeline")
-        if pipeline is not None:
-            pipeline.clear_contract()
-        st.session_state["chat"] = []
+        _reset_contract()
         st.rerun()

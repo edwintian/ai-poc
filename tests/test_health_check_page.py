@@ -197,14 +197,80 @@ def test_pipeline_is_per_session_with_shared_kb(env):
 
 
 def test_second_session_isolated(env):
+    def make(tag):
+        def fake(pages, ctx, pipeline, llm, progress=None):
+            pipeline.contract = tag
+            r = make_report()
+            r.disclaimer = tag
+            return r
+        return fake
+    env.mp.setattr(ca, "analyse", make("one"))
     first = analyze(run_upload())
-    assert first.session_state["pipeline"].contract == "indexed"
-    second = AppTest.from_file(PAGE).run()
-    second.button(key="analyze")  # page renders
-    assert second.session_state["report"] is None if "report" in second.session_state else True
-    assert not (second.session_state["chat"] if "chat" in second.session_state else [])
-    second = run_upload(second)
-    # pipeline is created lazily on analyse; a fresh one must be empty
-    st_pipe = second.session_state["pipeline"] if "pipeline" in second.session_state else None
-    assert st_pipe is None or st_pipe.contract is None
-    assert st_pipe is not first.session_state["pipeline"]
+    env.mp.setattr(ca, "analyse", make("two"))
+    second = analyze(run_upload())
+    p1, p2 = first.session_state["pipeline"], second.session_state["pipeline"]
+    assert p1 is not p2 and p1.kb is env.kb and p2.kb is env.kb
+    assert first.session_state["report"].disclaimer == "one"
+    assert second.session_state["report"].disclaimer == "two"
+    second.button(key="clear").click()
+    second.run()
+    assert second.session_state["report"] is None and p2.contract is None
+    assert first.session_state["report"].disclaimer == "one" and p1.contract == "one"
+
+
+def test_untrusted_text_is_escaped(env):
+    evil = "![x](https://evil.example/p.png) **bold** S$2,000 and S$300"
+
+    def fake(pages, ctx, pipeline, llm, progress=None):
+        r = make_report()
+        r.findings[0].explanation = evil
+        r.findings[0].wording = evil
+        r.findings[0].reason = evil
+        r.findings[0].question = evil
+        return r
+
+    env.mp.setattr(ca, "analyse", fake)
+    at = analyze(run_upload())
+    assert len(at.get("imgs")) == 0
+    body = " ".join(m.value for m in at.expander[0].markdown)
+    assert "\\!\\[x\\]\\(https://evil" in body
+    assert "\\*\\*bold\\*\\*" in body
+    assert "S\\$2,000" in body and "S\\$300" in body
+    assert body.count(evil) == 0
+
+
+def test_failed_analyze_leaves_nothing(env):
+    at = analyze(run_upload())
+    assert at.session_state["report"] is not None
+
+    def fail(pages, ctx, pipeline, llm, progress=None):
+        pipeline.contract = "indexed"
+        raise llm_mod.LLMError("x")
+
+    env.mp.setattr(ca, "analyse", fail)
+    at.session_state["chat"] = ["old"]
+    at = analyze(at)
+    assert at.session_state["report"] is None
+    assert at.session_state["pipeline"].contract is None
+    assert not at.session_state["chat"]
+    assert len(at.error) == 1
+
+
+def test_clear_visible_when_only_contract_indexed(env):
+    at = AppTest.from_file(PAGE).run()
+    assert [b.key for b in at.button] == ["analyze"]
+    at = AppTest.from_file(PAGE)
+    at.session_state["pipeline"] = rp.RagPipeline(env.kb, FakeEmbedder())
+    at.session_state["pipeline"].contract = "indexed"
+    at.run()
+    assert at.session_state["report"] is None
+    assert [b.key for b in at.button] == ["analyze", "clear"]
+
+
+def test_progress_bar_emptied_on_error(env):
+    def fail(pages, ctx, pipeline, llm, progress=None):
+        raise llm_mod.LLMError("x")
+
+    env.mp.setattr(ca, "analyse", fail)
+    analyze(run_upload())
+    assert FakeBar.calls[-1] == ("empty",)
