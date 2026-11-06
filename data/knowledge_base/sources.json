@@ -1,0 +1,72 @@
+[
+  {
+    "file": "employment_act.txt",
+    "kind": "law",
+    "title": "Employment Act 1968",
+    "url": "https://sso.agc.gov.sg/Act/EmA1968",
+    "fetch": false
+  },
+  {
+    "file": "mom_contract_of_service_key_employment_terms.txt",
+    "kind": "guidance",
+    "title": "MOM: Key employment terms",
+    "url": "https://www.mom.gov.sg/employment-practices/contract-of-service/key-employment-terms",
+    "fetch": true
+  },
+  {
+    "file": "mom_employment_act_who_is_covered.txt",
+    "kind": "guidance",
+    "title": "MOM: Who is covered by the Employment Act",
+    "url": "https://www.mom.gov.sg/employment-practices/employment-act/who-is-covered",
+    "fetch": true
+  },
+  {
+    "file": "mom_hours_of_work_overtime_and_rest_days.txt",
+    "kind": "guidance",
+    "title": "MOM: Hours of work, overtime and rest days",
+    "url": "https://www.mom.gov.sg/employment-practices/hours-of-work-overtime-and-rest-days",
+    "fetch": true
+  },
+  {
+    "file": "mom_leave_annual_leave_eligibility_and_entitlement.txt",
+    "kind": "guidance",
+    "title": "MOM: Annual leave eligibility and entitlement",
+    "url": "https://www.mom.gov.sg/employment-practices/leave/annual-leave/eligibility-and-entitlement",
+    "fetch": true
+  },
+  {
+    "file": "mom_leave_sick_leave_eligibility_and_entitlement.txt",
+    "kind": "guidance",
+    "title": "MOM: Sick leave eligibility and entitlement",
+    "url": "https://www.mom.gov.sg/employment-practices/leave/sick-leave/eligibility-and-entitlement",
+    "fetch": true
+  },
+  {
+    "file": "mom_salary_paying_salary.txt",
+    "kind": "guidance",
+    "title": "MOM: Paying salary",
+    "url": "https://www.mom.gov.sg/employment-practices/salary/paying-salary",
+    "fetch": true
+  },
+  {
+    "file": "mom_salary_salary_deductions.txt",
+    "kind": "guidance",
+    "title": "MOM: Salary deductions",
+    "url": "https://www.mom.gov.sg/employment-practices/salary/salary-deductions",
+    "fetch": true
+  },
+  {
+    "file": "mom_termination_of_employment_termination_with_notice.txt",
+    "kind": "guidance",
+    "title": "MOM: Termination with notice",
+    "url": "https://www.mom.gov.sg/employment-practices/termination-of-employment/termination-with-notice",
+    "fetch": true
+  },
+  {
+    "file": "mom_termination_of_employment_termination_without_notice.txt",
+    "kind": "guidance",
+    "title": "MOM: Termination without notice",
+    "url": "https://www.mom.gov.sg/employment-practices/termination-of-employment/termination-without-notice",
+    "fetch": true
+  }
+]

@@ -1,0 +1,31 @@
+# Virtual environments
+myenv/
+.venv/
+
+# Secrets: never commit (ADR 0012)
+.env
+.env.*
+!.env.example
+.streamlit/secrets.toml
+
+# Python build and test artefacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local tool and agent workspaces
+.superpowers/
+.agents/
+.claude/
+
+# Saved source page in the repo root (Task 4b moves it into data/knowledge_base/source/)
+/Employment Act 1968 - Singapore Statutes Online.html
+
+# OS and editor files
+.DS_Store
+.vscode/
+.idea/
+*.log

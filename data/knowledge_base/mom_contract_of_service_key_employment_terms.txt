@@ -1,0 +1,48 @@
+# Key employment terms (KETs)
+KETs must include the following items, unless it is not applicable to the employee.
+If the employee is a PME and overtime pay does not apply, the KETs don’t need to include items 11 (OT period) and 12 (OT pay).
+Number | Item description
+1 | Full name of employer.
+2 | Full name of employee.
+3 | Job title, main duties and responsibilities.
+4 | Start date of employment.
+5 | Duration of employment (if employee is on fixed-term contract).
+6
+Working arrangements, such as:
+- Daily working hours (e.g. 8.30am – 6pm).
+- Number of working days per week (e.g. six).
+- Rest day (e.g. Saturday).
+Use KETs verification tool to check if work arrangements meet the Employment Act requirements.
+7 | Salary period.
+8
+Basic salary.
+For hourly, daily or piece-rated workers, employers should also indicate the basic rate of pay (e.g. $X per hour, day or piece).
+9 | Fixed allowances.
+10 | Fixed deductions.
+11 | Overtime payment period (if different from item 7 salary period).
+12 | Overtime rate of pay.
+13
+Other salary-related components, such as:
+- Bonuses
+- Incentives
+14
+Type of leave, such as:
+- Annual leave
+- Outpatient sick leave
+- Hospitalisation leave
+- Maternity leave
+- Childcare leave
+15
+Other medical benefits, such as:
+- Insurance
+- Medical benefits
+- Dental benefits
+16 | Probation period.
+17 | Notice period.
+18 | (Optional) Place of work. Used if the work location is different from the employer’s address. Although optional, you are strongly encouraged to include this info.
+# Download samples and templates for employers
+For help complying with these requirements, you can download the following templates:
+- KETs sample form – blank
+- KETs sample form – with explanation
+Use the KETs verification tool to generate sections on work arrangements and salary.
+You can also find more templates, tools, workshops and advisory services.
