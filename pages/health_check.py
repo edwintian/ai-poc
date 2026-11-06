@@ -5,7 +5,6 @@ from src import contract_analyser as ca
 from src import document_parser as dp
 from src import llm as llm_mod
 from src import rag_pipeline as rp
-from src.schemas import EmploymentContext
 from src.ui import md_escape
 
 KB_DIR = "data/knowledge_base"
@@ -23,7 +22,6 @@ TERM_LABELS = {
     "confidentiality": "Confidentiality",
     "non_compete": "Non-compete",
 }
-CATEGORIES = ["Not sure", "Workman", "Non-workman", "Manager or executive"]
 
 
 @st.cache_resource
@@ -37,7 +35,6 @@ def _reset_contract() -> None:
     if pipeline is not None:
         pipeline.clear_contract()
     st.session_state["chat"] = []
-    st.session_state["context"] = None
 
 
 def _label(key: str) -> str:
@@ -46,7 +43,6 @@ def _label(key: str) -> str:
 
 st.session_state.setdefault("report", None)
 st.session_state.setdefault("chat", [])
-st.session_state.setdefault("context", None)
 
 st.title("Contract Health Check")
 st.write("Upload an employment contract to see how its key terms compare with Singapore law and MOM guidance.")
@@ -55,17 +51,9 @@ st.info("The contract text is sent to OpenAI for analysis and is not stored afte
 uploaded = st.file_uploader(
     "Employment contract (PDF)", type=["pdf"], key=f"upload_{st.session_state.setdefault('upload_n', 0)}"
 )
-category = st.selectbox("Employment category", CATEGORIES, index=0)
-salary = st.number_input(
-    "Monthly basic salary (optional, S$)", min_value=0.0, value=None, step=100.0,
-    help="Part 4 of the Employment Act covers workmen earning up to $4,500 and others up to "
-         "$2,600 a month. The Minister can change these ceilings.",
-)
-
 if st.button("Analyze", key="analyze", type="primary", disabled=uploaded is None):
     st.session_state["report"] = None
     _reset_contract()
-    ctx = EmploymentContext(category=category, monthly_basic_salary=salary)
     bar = None
     try:
         data = uploaded.getvalue()  # read here only; never kept in session state
@@ -84,10 +72,9 @@ if st.button("Analyze", key="analyze", type="primary", disabled=uploaded is None
         def progress(done: int, total: int) -> None:
             bar.progress(done / total, text=f"Assessing term {done} of {total}")
 
-        report = ca.analyse(pages, ctx, st.session_state["pipeline"], llm_mod.OpenAIClient(),
+        report = ca.analyse(pages, st.session_state["pipeline"], llm_mod.OpenAIClient(),
                             progress=progress)
         st.session_state["report"] = report
-        st.session_state["context"] = ctx
     except dp.UnreadableDocument as e:
         _reset_contract()
         st.error(str(e))

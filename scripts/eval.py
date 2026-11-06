@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "sample_contracts"))
 
-from src.schemas import TERM_KEYS, EmploymentContext, Report  # noqa: E402
+from src.schemas import TERM_KEYS, Report  # noqa: E402
 
 
 class EvalScore(BaseModel):
@@ -73,10 +73,9 @@ def main(analyse_fn: Callable | None = None, pipeline=None, llm=None, expected: 
     from src.document_parser import parse_pdf
 
     reports: dict[str, Report] = {}
-    for name, entry in expected.items():
+    for name in expected:
         pages = parse_pdf((samples_dir / f"{name}.pdf").read_bytes())
-        ctx = EmploymentContext(**entry["_context"])
-        reports[name] = analyse_fn(pages, ctx, pipeline, llm)
+        reports[name] = analyse_fn(pages, pipeline, llm)
 
     rows = _compare(expected, reports)
     status_of = {(n, f.term): f.status for n, r in reports.items() for f in r.findings}

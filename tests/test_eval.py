@@ -24,8 +24,7 @@ def _statuses(v):
 def test_expected_shape():
     assert set(EXPECTED) == set(SAMPLES)
     for name, entry in EXPECTED.items():
-        assert entry["_context"]["category"]
-        assert set(entry) - {"_context"} == set(TERM_KEYS)
+        assert set(entry) == set(TERM_KEYS)
         for key in TERM_KEYS:
             e = entry[key]
             assert _statuses(e["status"]) <= STATUSES and e["status"]
@@ -84,14 +83,8 @@ def test_score_missed_term_and_unsafe_consistent():
     assert s.unsafe_consistent == 2
 
 
-def test_score_ignores_context_key():
-    exp = _exp()
-    exp["s"]["_context"] = {"category": "Workman", "monthly_basic_salary": 1}
-    assert ev.score(exp, {"s": _report()}).total == 11
-
-
 def _stub_analyse(status):
-    def fn(pages, ctx, pipeline, llm, progress=None):
+    def fn(pages, pipeline, llm, progress=None):
         return _report(salary_payment=_finding("salary_payment", status, page=1))
     return fn
 

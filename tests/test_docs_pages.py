@@ -51,7 +51,7 @@ def test_methodology_lists_all_adrs_by_number_and_title():
     at = AppTest.from_file(METHOD).run()
     text = md_text(at)
     files = sorted((ROOT / "docs" / "adr").glob("[0-9]*.md"))
-    assert len(files) == 12
+    assert len(files) == 13
     for f in files:
         first = f.read_text(encoding="utf-8").splitlines()[0]
         num, title = re.match(r"# (\d{4}) – (.*)", first).groups()

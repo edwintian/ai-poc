@@ -65,6 +65,7 @@ ADRS = [
     ("0010", "Second-chance recovery for terms missed by extraction"),
     ("0011", "Small real-model accuracy eval over the sample contracts"),
     ("0012", "Secrets stay with the user; deployment uses the user's own accounts"),
+    ("0013", "No employee category or salary input; always check hours and overtime"),
 ]
 
 st.title("Methodology")
@@ -108,9 +109,10 @@ st.markdown(
   2026-10-30 where 7 of 7 on-topic questions were answered and 7 of 7
   off-topic ones were refused.
 - **Rules engine:** weekly hours of 44 or fewer and overtime of at least 1.5
-  times pay (s 38), only when Part 4 applies (s 35: workmen earning up to
-  $4,500 a month, other non-managerial employees up to $2,600 a month, or
-  such other amount as the Minister may prescribe). Annual leave follows
+  times pay (s 38), checked for every contract. These limits only apply
+  where Part 4 covers you (s 35: workmen earning up to $4,500 a month, other
+  non-managerial employees up to $2,600 a month, or such other amount as the
+  Minister may prescribe), so any shortfall says so. Annual leave follows
   s 88A (7 days in year 1 rising to 14), and only 14 or more is Consistent.
   Confidentiality and non-compete are out of scope.
 - **LLM:** `gpt-4o-mini` by default (the `LLM_MODEL` setting overrides it),

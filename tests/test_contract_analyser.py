@@ -17,12 +17,11 @@ from src.llm import LLMError
 from src.rag_pipeline import RagPipeline, RetrievalError, VectorStore
 from src.rules_engine import OUT_OF_SCOPE_REASON, RULE_SOURCES
 from src.schemas import (
-    TERM_KEYS, ContractTerms, EmploymentContext, Evidence, ExtractedTerm, Hit, Page, Passage,
+    TERM_KEYS, ContractTerms, Evidence, ExtractedTerm, Hit, Page, Passage,
     RuleResult, TermAssessment,
 )
 
 FIX = Path(__file__).parent / "fixtures"
-COVERED = EmploymentContext(category="Workman", monthly_basic_salary=3000)
 
 
 def term(key, found=False, wording=None, page=None, weekly_hours=None, overtime_multiplier=None,
@@ -238,7 +237,7 @@ def test_rule_needs_attention_with_empty_llm_sources_kept():
 def test_non_compete_out_of_scope_wording_kept():
     from src.rules_engine import rule_for
     t = term("non_compete", True, "No competing for 2 years.", 3)
-    f = assess_term(t, rule_for(t, COVERED), EVIDENCE, StubLLM(assess={"non_compete": assessment("Consistent")}))
+    f = assess_term(t, rule_for(t), EVIDENCE, StubLLM(assess={"non_compete": assessment("Consistent")}))
     assert f.status == "Unable to Assess" and f.reason == OUT_OF_SCOPE_REASON
     assert f.wording == t.wording and f.page == 3
     assert f.explanation == "LLM explanation for x"
@@ -323,7 +322,7 @@ def test_recovery_finds_missed_term_and_rule_applies(pipeline):
     wording = "the Employee is entitled to 6 days of paid leave per year"
     llm = StubLLM(terms=[SALARY], recover={
         "annual_leave": term("annual_leave", True, wording, 1, annual_leave_days=6)})
-    rep = analyse(PAGES, COVERED, pipeline, llm)
+    rep = analyse(PAGES, pipeline, llm)
     f = {x.term: x for x in rep.findings}["annual_leave"]
     assert f.status == "Needs Attention" and f.wording == wording and f.page == 2
     assert "first-year minimum" in f.reason
@@ -332,14 +331,14 @@ def test_recovery_finds_missed_term_and_rule_applies(pipeline):
 def test_recovery_unverified_quote_stays_not_found(pipeline):
     llm = StubLLM(terms=[SALARY], recover={
         "annual_leave": term("annual_leave", True, "You get 30 days of leave.", 2, annual_leave_days=30)})
-    f = {x.term: x for x in analyse(PAGES, COVERED, pipeline, llm).findings}["annual_leave"]
+    f = {x.term: x for x in analyse(PAGES, pipeline, llm).findings}["annual_leave"]
     assert f.wording is None and f.page is None and f.status == "Unable to Assess"
     assert "couldn't find an annual leave clause" in f.reason
 
 
 def test_recovery_not_called_when_found_or_no_contract_hits(pipeline):
     llm = StubLLM(terms=[SALARY])
-    analyse(PAGES, COVERED, pipeline, llm)
+    analyse(PAGES, pipeline, llm)
     recovered = {_key(u) for _, _, u in llm.calls_for(ExtractedTerm)}
     assert "salary_payment" not in recovered  # found by extraction
     assert "confidentiality" not in recovered  # query has no contract hits
@@ -348,7 +347,7 @@ def test_recovery_not_called_when_found_or_no_contract_hits(pipeline):
 
 def test_recovery_llm_error_leaves_not_found_without_service_error(pipeline):
     llm = StubLLM(terms=[SALARY], recover_error=True)
-    rep = analyse(PAGES, COVERED, pipeline, llm)
+    rep = analyse(PAGES, pipeline, llm)
     f = {x.term: x for x in rep.findings}["annual_leave"]
     assert f.wording is None and f.explanation != SERVICE_ERROR_EXPLANATION
     assert "couldn't find an annual leave clause" in f.reason
@@ -357,19 +356,19 @@ def test_recovery_llm_error_leaves_not_found_without_service_error(pipeline):
 def test_not_a_contract_raises_before_retrieval(pipeline):
     llm = StubLLM(is_contract=False)
     with pytest.raises(NotAContract):
-        analyse(PAGES, COVERED, pipeline, llm)
+        analyse(PAGES, pipeline, llm)
     assert pipeline.queries == [] and len(llm.calls) == 1
 
 
 def test_eleven_findings_in_order_and_disclaimer(pipeline):
-    rep = analyse(PAGES, COVERED, pipeline, StubLLM(terms=[SALARY]))
+    rep = analyse(PAGES, pipeline, StubLLM(terms=[SALARY]))
     assert [f.term for f in rep.findings] == TERM_KEYS
     assert "educational information, not a substitute for professional legal advice" in rep.disclaimer
 
 
 def test_retrieve_receives_term_queries_on_same_pipeline(pipeline):
     llm = StubLLM(terms=[SALARY])
-    analyse(PAGES, COVERED, pipeline, llm)
+    analyse(PAGES, pipeline, llm)
     assert pipeline.indexed == 1 and pipeline.contract is not None
     assert sorted(pipeline.queries) == sorted(
         term_query(SALARY) if k == "salary_payment" else TERM_QUERIES[k] for k in TERM_KEYS)
@@ -382,7 +381,7 @@ HOURS_PAGES = PAGES + [Page(number=3, text="Working time is 9am to 6pm, Monday t
 def test_one_failed_term_gives_service_error_finding(pipeline):
     hours = term("working_hours", True, "9am to 6pm, Monday to Friday", 3, weekly_hours=40)
     llm = StubLLM(terms=[SALARY, hours], fail_keys={"deductions", "working_hours"})
-    rep = analyse(HOURS_PAGES, COVERED, pipeline, llm)
+    rep = analyse(HOURS_PAGES, pipeline, llm)
     assert [f.term for f in rep.findings] == TERM_KEYS
     by = {f.term: f for f in rep.findings}
     d = by["deductions"]
@@ -397,7 +396,7 @@ def test_one_failed_term_gives_service_error_finding(pipeline):
 
 def test_retrieval_error_gives_service_error_finding(kb):
     p = SpyPipeline(kb, FakeEmbedder(), fail_queries={TERM_QUERIES["sick_leave"]})
-    rep = analyse(PAGES, COVERED, p, StubLLM(terms=[SALARY]))
+    rep = analyse(PAGES, p, StubLLM(terms=[SALARY]))
     f = {x.term: x for x in rep.findings}["sick_leave"]
     assert f.status == "Unable to Assess" and f.explanation == SERVICE_ERROR_EXPLANATION
     assert len(rep.findings) == 11
@@ -408,14 +407,14 @@ def test_extraction_llm_error_propagates(pipeline):
         def structured(self, *a):
             raise LLMError("down")
     with pytest.raises(LLMError):
-        analyse(PAGES, COVERED, pipeline, Broken())
+        analyse(PAGES, pipeline, Broken())
 
 
 def test_out_of_order_completion_still_sorted_and_progress_on_calling_thread(pipeline):
     delays = {k: 0.005 * (len(TERM_KEYS) - i) for i, k in enumerate(TERM_KEYS)}
     llm = StubLLM(terms=[SALARY], delays=delays)
     events = []
-    rep = analyse(PAGES, COVERED, pipeline, llm,
+    rep = analyse(PAGES, pipeline, llm,
                   progress=lambda d, t: events.append((d, t, threading.get_ident())))
     assert [f.term for f in rep.findings] == TERM_KEYS
     assert [e[0] for e in events] == list(range(1, 12))
@@ -482,7 +481,7 @@ def test_unsupported_figures_lead_to_unable_to_assess(pipeline):
     pages = [Page(number=1, text="Salary is paid monthly. You get 14 days of annual leave.")]
     llm = StubLLM(terms=[term("working_hours", True, "Salary is paid monthly.", 1, weekly_hours=40),
                          term("annual_leave", True, "You get 14 days of annual leave.", 1, annual_leave_days=15)])
-    by = {f.term: f for f in analyse(pages, COVERED, pipeline, llm).findings}
+    by = {f.term: f for f in analyse(pages, pipeline, llm).findings}
     assert by["working_hours"].status == "Unable to Assess" and by["working_hours"].wording == "Salary is paid monthly."
     assert by["annual_leave"].status == "Unable to Assess" and by["annual_leave"].page == 1
 
@@ -490,7 +489,7 @@ def test_unsupported_figures_lead_to_unable_to_assess(pipeline):
 def test_recovered_figure_is_quote_checked(pipeline):
     wording = "the Employee is entitled to 6 days of paid leave per year"
     llm = StubLLM(terms=[SALARY], recover={"annual_leave": term("annual_leave", True, wording, 2, annual_leave_days=16)})
-    f = {x.term: x for x in analyse(PAGES, COVERED, pipeline, llm).findings}["annual_leave"]
+    f = {x.term: x for x in analyse(PAGES, pipeline, llm).findings}["annual_leave"]
     assert f.wording == wording and f.status == "Unable to Assess"
 
 
@@ -500,7 +499,7 @@ def test_unexpected_worker_exception_gives_service_error(pipeline):
             if model_cls is TermAssessment and _key(user) == "probation":
                 raise ValueError("secret contract text in exception")
             return super().structured(system, user, model_cls)
-    rep = analyse(PAGES, COVERED, pipeline, Exploding(terms=[SALARY]))
+    rep = analyse(PAGES, pipeline, Exploding(terms=[SALARY]))
     assert [f.term for f in rep.findings] == TERM_KEYS
     f = {x.term: x for x in rep.findings}["probation"]
     assert f.status == "Unable to Assess" and f.explanation == SERVICE_ERROR_EXPLANATION
@@ -562,8 +561,8 @@ def scenario_pipeline():
     return RagPipeline(VectorStore(ps, FakeEmbedder().embed([p.text for p in ps])), FakeEmbedder())
 
 
-def run(name, llm, pipeline, ctx=COVERED):
-    rep = analyse(pdf_pages(name), ctx, pipeline, llm)
+def run(name, llm, pipeline):
+    rep = analyse(pdf_pages(name), pipeline, llm)
     assert [f.term for f in rep.findings] == TERM_KEYS
     return {f.term: f for f in rep.findings}
 

@@ -13,7 +13,7 @@ from src.llm import LLMError, complete_structured
 from src.rag_pipeline import format_evidence, resolve_sources
 from src.rules_engine import RULE_SOURCES, rule_for
 from src.schemas import (
-    TERM_KEYS, ContractTerms, EmploymentContext, Evidence, ExtractedTerm, Finding, Hit, Page,
+    TERM_KEYS, ContractTerms, Evidence, ExtractedTerm, Finding, Hit, Page,
     Report, RuleResult, Source, TermAssessment,
 )
 
@@ -265,7 +265,7 @@ def _service_error(term: ExtractedTerm, rule: RuleResult | None) -> Finding:
 
 # ---------- orchestration ----------
 
-def _analyse_term(term: ExtractedTerm, pages: list[Page], ctx: EmploymentContext, pipeline, llm) -> Finding:
+def _analyse_term(term: ExtractedTerm, pages: list[Page], pipeline, llm) -> Finding:
     """Runs in a worker thread: no Streamlit calls here."""
     try:
         evidence = pipeline.retrieve(term_query(term))
@@ -274,12 +274,12 @@ def _analyse_term(term: ExtractedTerm, pages: list[Page], ctx: EmploymentContext
                 term = recover_term(term.key, evidence.contract, pages, llm)
             except LLMError:
                 pass  # recovery failure leaves the term not found (ADR 0010)
-        return assess_term(term, rule_for(term, ctx), evidence, llm)
+        return assess_term(term, rule_for(term), evidence, llm)
     except Exception:  # LLMError, RetrievalError or anything unexpected: contain it to this term,
-        return _service_error(term, rule_for(term, ctx))  # and never show the exception text
+        return _service_error(term, rule_for(term))  # and never show the exception text
 
 
-def analyse(pages: list[Page], ctx: EmploymentContext, pipeline, llm,
+def analyse(pages: list[Page], pipeline, llm,
             progress: Callable[[int, int], None] | None = None) -> Report:
     terms = extract_terms(pages, llm)
     if not terms.is_employment_contract:
@@ -288,7 +288,7 @@ def analyse(pages: list[Page], ctx: EmploymentContext, pipeline, llm,
     total = len(terms.terms)
     findings: list[Finding] = []
     with ThreadPoolExecutor(max_workers=MAX_WORKERS) as pool:
-        futures = [pool.submit(_analyse_term, t, pages, ctx, pipeline, llm) for t in terms.terms]
+        futures = [pool.submit(_analyse_term, t, pages, pipeline, llm) for t in terms.terms]
         for done, fut in enumerate(as_completed(futures), start=1):
             findings.append(fut.result())
             if progress:

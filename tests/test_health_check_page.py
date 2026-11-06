@@ -57,8 +57,8 @@ def env(monkeypatch):
     monkeypatch.setattr(llm_mod, "OpenAIClient", lambda: object())
     monkeypatch.setattr(dp, "parse_pdf", lambda data: [Page(number=1, text=SECRET)])
 
-    def fake_analyse(pages, ctx, pipeline, llm, progress=None):
-        calls.append((pages, ctx, progress))
+    def fake_analyse(pages, pipeline, llm, progress=None):
+        calls.append((pages, progress))
         pipeline.contract = "indexed"
         if progress:
             progress(3, 11)
@@ -85,10 +85,8 @@ def analyze(at):
 def test_widgets(env):
     at = AppTest.from_file(PAGE).run()
     assert at.file_uploader[0].allowed_type == [".pdf"]
-    assert at.selectbox[0].value == "Not sure"
-    assert at.number_input[0].value is None
+    assert len(at.selectbox) == 0 and len(at.number_input) == 0  # no category/salary inputs
     assert any("OpenAI" in m.value for m in list(at.info) + list(at.caption))
-    assert "Minister" in (at.number_input[0].help or "")
     assert at.button(key="analyze").disabled
 
 
@@ -99,18 +97,11 @@ def test_analyze_enabled_after_upload(env):
 
 def test_analyze_calls_once_stores_report(env):
     at = run_upload()
-    at.selectbox[0].select("Workman")
-    at.number_input[0].set_value(2000.0)
-    at.run()
     at = analyze(at)
-    assert len(env.calls) == 1 and callable(env.calls[0][2])
-    assert env.calls[0][1].category == "Workman"
-    assert env.calls[0][1].monthly_basic_salary == 2000.0
-    assert at.session_state["context"].category == "Workman"
+    assert len(env.calls) == 1 and callable(env.calls[0][1])
     assert len(at.session_state["report"].findings) == 11
     assert ("progress", 3 / 11, "Assessing term 3 of 11") in FakeBar.calls
-    at.selectbox[0].select("Non-workman")
-    at.run()
+    at.run()  # a rerun must not re-analyse
     assert len(env.calls) == 1
     assert at.session_state["report"] is not None
     assert not at.exception
@@ -172,7 +163,6 @@ def test_clear(env):
     assert at.session_state["report"] is None
     assert at.session_state["pipeline"].contract is None
     assert not at.session_state["chat"]
-    assert at.session_state["context"] is None
     assert len(at.expander) == 0
     assert at.file_uploader[0].value is None
     assert at.button(key="analyze").disabled
@@ -201,7 +191,7 @@ def test_pipeline_is_per_session_with_shared_kb(env):
 
 def test_second_session_isolated(env):
     def make(tag):
-        def fake(pages, ctx, pipeline, llm, progress=None):
+        def fake(pages, pipeline, llm, progress=None):
             pipeline.contract = tag
             r = make_report()
             r.disclaimer = tag
@@ -224,7 +214,7 @@ def test_second_session_isolated(env):
 def test_untrusted_text_is_escaped(env):
     evil = "![x](https://evil.example/p.png) **bold** S$2,000 and S$300"
 
-    def fake(pages, ctx, pipeline, llm, progress=None):
+    def fake(pages, pipeline, llm, progress=None):
         r = make_report()
         r.findings[0].explanation = evil
         r.findings[0].wording = evil
@@ -246,7 +236,7 @@ def test_failed_analyze_leaves_nothing(env):
     at = analyze(run_upload())
     assert at.session_state["report"] is not None
 
-    def fail(pages, ctx, pipeline, llm, progress=None):
+    def fail(pages, pipeline, llm, progress=None):
         pipeline.contract = "indexed"
         raise llm_mod.LLMError("x")
 
@@ -271,7 +261,7 @@ def test_clear_visible_when_only_contract_indexed(env):
 
 
 def test_progress_bar_emptied_on_error(env):
-    def fail(pages, ctx, pipeline, llm, progress=None):
+    def fail(pages, pipeline, llm, progress=None):
         raise llm_mod.LLMError("x")
 
     env.mp.setattr(ca, "analyse", fail)

@@ -41,11 +41,6 @@ class Source(BaseModel):
     citation: str
 
 
-class EmploymentContext(BaseModel):
-    category: Literal["Workman", "Non-workman", "Manager or executive", "Not sure"] = "Not sure"
-    monthly_basic_salary: float | None = None
-
-
 class ExtractedTerm(BaseModel):
     key: str
     found: bool

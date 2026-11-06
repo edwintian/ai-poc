@@ -1,4 +1,4 @@
-from src.schemas import ContractTerms, EmploymentContext, ExtractedTerm, RuleResult, Source
+from src.schemas import ContractTerms, ExtractedTerm, RuleResult, Source
 
 MAX_WEEKLY_HOURS = 44  # s 38
 MIN_OVERTIME_MULTIPLIER = 1.5  # s 38
@@ -19,7 +19,9 @@ HOURS_UNCLEAR_REASON = (
 OVERTIME_NOT_FOUND_REASON = (
     "We couldn't find an overtime clause in the contract. If you're covered by Part 4 of the Employment "
     "Act, overtime must be paid at no less than 1.5 times your hourly basic rate, so check with your "
-    "employer how overtime is handled."
+    "employer how overtime is handled. Part 4 covers workmen earning up to "
+    f"${WORKMAN_SALARY_CEILING:,} a month and other employees (not managers or executives) earning up to "
+    f"${NON_WORKMAN_SALARY_CEILING:,} a month in basic salary (s 35)."
 )
 _EMA = "https://sso.agc.gov.sg/Act/EmA1968"
 RULE_SOURCES: dict[str, Source] = {
@@ -31,30 +33,15 @@ RULE_SOURCES: dict[str, Source] = {
                       citation="Employment Act 1968 – 35. Application of this Part to certain workmen and other employees"),
 }
 
-_CEILING_NOTE = "The salary ceilings can be changed by the Minister, so check the current figures with MOM."
-NO_PART4_REASON = (
-    "Part 4 of the Employment Act (hours and overtime) may not apply to you, because of your employee "
-    "category or monthly basic salary, so we can't assess this term against it. " + _CEILING_NOTE
+# No user input on employee category or salary: hours and overtime are always checked, and every
+# shortfall says the limits only apply where Part 4 covers the employee (ADR 0013).
+PART4_NOTE = (
+    "These limits are in Part 4 of the Employment Act, which covers workmen earning up to "
+    f"${WORKMAN_SALARY_CEILING:,} a month and other employees (not managers or executives) earning up to "
+    f"${NON_WORKMAN_SALARY_CEILING:,} a month in basic salary (s 35). If you're outside these groups, the limits "
+    "may not apply to you. The Minister can change these figures, so check the current ones with MOM."
 )
-UNKNOWN_COVERAGE_REASON = (
-    "Whether Part 4 of the Employment Act (hours and overtime) applies depends on your employee category "
-    "and monthly basic salary. We need your employee category and monthly basic salary to tell whether these rules apply to you. "
-    + _CEILING_NOTE
-)
-
-
-def part4_applies(ctx: EmploymentContext) -> bool | None:
-    """s 35: Part 4 coverage by category and salary ceiling."""
-    if ctx.category == "Manager or executive":
-        return False
-    sal = ctx.monthly_basic_salary
-    if sal is None or sal <= 0:
-        return None
-    if ctx.category == "Workman":
-        return sal <= WORKMAN_SALARY_CEILING
-    if ctx.category == "Non-workman":
-        return sal <= NON_WORKMAN_SALARY_CEILING
-    return None
+_SHORTFALL_IDS = ["ema-s38", "ema-s35"]
 
 
 def _res(term: str, status: str, reason: str, ids: list[str]) -> RuleResult:
@@ -65,18 +52,7 @@ def _num(x: float) -> str:
     return str(int(x)) if float(x).is_integer() else f"{x:g}"
 
 
-def _coverage_gate(key: str, applies: bool | None) -> RuleResult | None:
-    if applies is False:
-        return _res(key, "Unable to Assess", NO_PART4_REASON, ["ema-s38", "ema-s35"])
-    if applies is None:
-        return _res(key, "Unable to Assess", UNKNOWN_COVERAGE_REASON, ["ema-s38", "ema-s35"])
-    return None
-
-
-def _hours(t: ExtractedTerm, ctx: EmploymentContext) -> RuleResult:
-    gate = _coverage_gate("working_hours", part4_applies(ctx))
-    if gate:
-        return gate
+def _hours(t: ExtractedTerm) -> RuleResult:
     if not t.found:
         return _res("working_hours", "Unable to Assess",
                     "We couldn't find a working hours clause in the contract.", ["ema-s38"])
@@ -87,18 +63,12 @@ def _hours(t: ExtractedTerm, ctx: EmploymentContext) -> RuleResult:
         return _res("working_hours", "Consistent",
                     f"{read}, which is within the {MAX_WEEKLY_HOURS}-hour weekly limit.", ["ema-s38"])
     return _res("working_hours", "Needs Attention",
-                f"{read}, which is above the {MAX_WEEKLY_HOURS}-hour weekly limit.", ["ema-s38"])
+                f"{read}, which is above the {MAX_WEEKLY_HOURS}-hour weekly limit. {PART4_NOTE}", _SHORTFALL_IDS)
 
 
-def _overtime(t: ExtractedTerm, ctx: EmploymentContext) -> RuleResult:
-    applies = part4_applies(ctx)
+def _overtime(t: ExtractedTerm) -> RuleResult:
     if not t.found:
-        if applies is True:
-            return _res("overtime", "Needs Attention", OVERTIME_NOT_FOUND_REASON, ["ema-s38"])
-        return _coverage_gate("overtime", applies)
-    gate = _coverage_gate("overtime", applies)
-    if gate:
-        return gate
+        return _res("overtime", "Needs Attention", OVERTIME_NOT_FOUND_REASON, _SHORTFALL_IDS)
     if t.overtime_multiplier is None or t.overtime_multiplier <= 0:
         return _res("overtime", "Unable to Assess",
                     "We couldn't determine the overtime rate from the contract wording.", ["ema-s38"])
@@ -109,10 +79,10 @@ def _overtime(t: ExtractedTerm, ctx: EmploymentContext) -> RuleResult:
                     f"minimum of {MIN_OVERTIME_MULTIPLIER} times.", ["ema-s38"])
     return _res("overtime", "Needs Attention",
                 f"We read the overtime rate as {m} times your hourly basic rate, which is below the "
-                f"minimum of {MIN_OVERTIME_MULTIPLIER} times.", ["ema-s38"])
+                f"minimum of {MIN_OVERTIME_MULTIPLIER} times. {PART4_NOTE}", _SHORTFALL_IDS)
 
 
-def _annual_leave(t: ExtractedTerm, ctx: EmploymentContext) -> RuleResult:
+def _annual_leave(t: ExtractedTerm) -> RuleResult:
     ids = ["ema-s88a"]
     if not t.found:
         return _res("annual_leave", "Unable to Assess",
@@ -136,13 +106,13 @@ def _annual_leave(t: ExtractedTerm, ctx: EmploymentContext) -> RuleResult:
 _RULES = {"working_hours": _hours, "overtime": _overtime, "annual_leave": _annual_leave}
 
 
-def rule_for(term: ExtractedTerm, ctx: EmploymentContext) -> RuleResult | None:
+def rule_for(term: ExtractedTerm) -> RuleResult | None:
     if term.key in OUT_OF_SCOPE_TERMS:
         return _res(term.key, "Unable to Assess", OUT_OF_SCOPE_REASON, [])
     fn = _RULES.get(term.key)
-    return fn(term, ctx) if fn else None
+    return fn(term) if fn else None
 
 
-def run_rules(terms: ContractTerms, ctx: EmploymentContext) -> list[RuleResult]:
-    results = (rule_for(t, ctx) for t in terms.terms)
+def run_rules(terms: ContractTerms) -> list[RuleResult]:
+    results = (rule_for(t) for t in terms.terms)
     return [r for r in results if r is not None]
