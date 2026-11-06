@@ -62,6 +62,20 @@ def test_default_and_env_model(monkeypatch):
     assert OpenAIClient(client=StubSDK(_resp("a")), model="explicit").model == "explicit"
 
 
+def test_qa_model_has_own_setting_and_default(monkeypatch):
+    from src.llm import DEFAULT_QA_MODEL
+    assert DEFAULT_QA_MODEL == "gpt-5.4-mini"
+    monkeypatch.setattr(llm_mod, "get_secret", lambda n: None)
+    assert OpenAIClient.for_qa(client=StubSDK(_resp("a"))).model == "gpt-5.4-mini"
+    # LLM_MODEL configures the health check only; it must not leak into Q&A
+    monkeypatch.setattr(llm_mod, "get_secret", lambda n: "gpt-x" if n == "LLM_MODEL" else None)
+    assert OpenAIClient.for_qa(client=StubSDK(_resp("a"))).model == "gpt-5.4-mini"
+    assert OpenAIClient(client=StubSDK(_resp("a"))).model == "gpt-x"
+    monkeypatch.setattr(llm_mod, "get_secret", lambda n: "gpt-q" if n == "QA_LLM_MODEL" else None)
+    assert OpenAIClient.for_qa(client=StubSDK(_resp("a"))).model == "gpt-q"
+    assert OpenAIClient(client=StubSDK(_resp("a"))).model == "gpt-4o-mini"
+
+
 @pytest.mark.parametrize("content", [None, "", "   "])
 def test_complete_empty_content_raises(content):
     with pytest.raises(LLMError):

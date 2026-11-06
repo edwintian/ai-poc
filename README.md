@@ -17,7 +17,8 @@ Edit `.env`:
 ```
 OPENAI_API_KEY=sk-...          # your OpenAI key
 APP_PASSWORD=choose-a-password # what you'll type to sign in
-LLM_MODEL=gpt-4o-mini          # or delete this line to use the default
+LLM_MODEL=gpt-4o-mini          # Contract Health Check model (optional)
+QA_LLM_MODEL=gpt-5.4-mini      # Ask Your Contract model (optional)
 ```
 
 Then start the app:
@@ -73,7 +74,8 @@ Settings are read from environment variables, then `.env`, then `st.secrets`.
 |---|---|---|
 | `OPENAI_API_KEY` | yes | OpenAI API key |
 | `APP_PASSWORD` | yes | If unset, nobody can sign in |
-| `LLM_MODEL` | no | Default `gpt-4o-mini` |
+| `LLM_MODEL` | no | Contract Health Check model. Default `gpt-4o-mini` |
+| `QA_LLM_MODEL` | no | Ask Your Contract model. Default `gpt-5.4-mini` (ADR 0014) |
 
 Never commit `.env` or `.streamlit/secrets.toml` (both are git-ignored).
 
@@ -103,7 +105,7 @@ To refresh the sources:
 
 ## Accuracy eval
 
-`make eval` runs the real model on the 5 sample contracts and exits 1 if any term is wrongly marked Consistent. Last run (2026-10-30, `gpt-4o-mini`, before ADR 0013 removed the category and salary inputs): 55/55 terms found, 52/55 statuses correct, 0 unsafe Consistent. See `docs/adr/0011-accuracy-eval.md`.
+`make eval` runs the real model on the 5 sample contracts and exits 1 if any term is wrongly marked Consistent. Last run (2026-10-30, `gpt-4o-mini`, before ADR 0013 removed the category and salary inputs): 55/55 terms found, 52/55 statuses correct, 0 unsafe Consistent. See `docs/adr/0011-accuracy-eval.md`. The 2026-11-06 model comparison behind the per-page defaults is in `docs/adr/0014-model-per-use-case.md`; `make eval` uses `LLM_MODEL`.
 
 ## Known limitations
 

@@ -92,11 +92,11 @@ if st.button("Analyze", key="analyze", type="primary", disabled=uploaded is None
 report = st.session_state["report"]
 if report is not None:
     st.subheader("Results")
-    st.dataframe(
+    st.table(  # static HTML table: long wording wraps instead of truncating
         pd.DataFrame({
             "Term": [_label(f.term) for f in report.findings],
             "Status": [f.status for f in report.findings],
-            "Wording": [f.wording or NOT_FOUND for f in report.findings],
+            "Wording": [md_escape(f.wording) if f.wording else NOT_FOUND for f in report.findings],
         }),
         hide_index=True,
     )

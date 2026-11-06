@@ -66,6 +66,7 @@ ADRS = [
     ("0011", "Small real-model accuracy eval over the sample contracts"),
     ("0012", "Secrets stay with the user; deployment uses the user's own accounts"),
     ("0013", "No employee category or salary input; always check hours and overtime"),
+    ("0014", "A separate model for each use case"),
 ]
 
 st.title("Methodology")
@@ -115,9 +116,13 @@ st.markdown(
   Minister may prescribe), so any shortfall says so. Annual leave follows
   s 88A (7 days in year 1 rising to 14), and only 14 or more is Consistent.
   Confidentiality and non-compete are out of scope.
-- **LLM:** `gpt-4o-mini` by default (the `LLM_MODEL` setting overrides it),
-  using structured outputs, so malformed replies are rejected, not guessed at.
-  The statuses are defined in the assessment prompt.
+- **LLM:** each use case has its own model (ADR 0014), and both use
+  structured outputs, so malformed replies are rejected, not guessed at.
+  - Contract Health Check: `gpt-4o-mini` by default (`LLM_MODEL` overrides it).
+    It was the only cheap model with no unsafe Consistent results in the eval.
+    The statuses are defined in the assessment prompt.
+  - Ask Your Contract: `gpt-5.4-mini` by default (`QA_LLM_MODEL` overrides it).
+    It answered all 15 on-topic test questions; `gpt-4o-mini` refused 2 of them.
 - **Guards:** quote verification, the two-way evidence guard, and
   grounding checks in code for Q&A. Untrusted text is escaped in the UI and inside prompts.
   Q&A keeps the last 6 turns of history.
@@ -132,12 +137,24 @@ st.header("Evaluation")
 st.markdown(
     """
 The assessment was checked on 5 synthetic contracts across 11 terms (55
-cases) with `gpt-4o-mini` on 2026-10-30.
+cases).
 
-- First run: 6 unsafe Consistent results. This led to defining the three
-  statuses in the assessment prompt.
-- Second run: all 55 terms found, status correct for 52 of 55, and 0 unsafe
-  Consistent. The 3 mismatches were over-cautious Needs Attention.
+- First run (`gpt-4o-mini`, 2026-10-30): 6 unsafe Consistent results. This
+  led to defining the three statuses in the assessment prompt.
+- Second run (`gpt-4o-mini`, 2026-10-30): all 55 terms found, status correct
+  for 52 of 55, and 0 unsafe Consistent. The 3 mismatches were over-cautious
+  Needs Attention.
+- Model comparison (2026-11-06), used to pick a model per use case:
+
+| Model | Status correct | Unsafe Consistent | Q&A answered (of 15) |
+|---|---|---|---|
+| `gpt-4o-mini` | 53/55 | 0 | 13 |
+| `gpt-4.1-mini` | 47–48/55 | 1 | 15 |
+| `gpt-5.4-mini` | 48–51/55 | 1–3 | 15 |
+| `gpt-5.5` | 49/55 | 0 | 15 |
+
+  Ranges are over two runs. The Q&A check used 15 on-topic and 3 off-topic
+  questions on the test contract; every model refused all 3 off-topic ones.
 
 This is a small synthetic sample, so treat it as a sanity check and not as a
 measure of real-world accuracy.

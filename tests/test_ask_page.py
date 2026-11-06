@@ -26,7 +26,7 @@ class Pipe:
 @pytest.fixture
 def env(monkeypatch):
     calls = []
-    monkeypatch.setattr(llm_mod, "OpenAIClient", lambda: "llm")
+    monkeypatch.setattr(llm_mod.OpenAIClient, "for_qa", classmethod(lambda cls: "llm"))
     box = {"result": None}
 
     def fake_answer(question, history, pipeline, llm):

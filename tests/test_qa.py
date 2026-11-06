@@ -71,6 +71,7 @@ def test_prompt_contains_evidence_and_question():
         assert h.passage.text in user and f"[{h.passage.id}]" in user
     assert "How much notice?" in user
     assert "untrusted" in system and "illegal" in system
+    assert "does not mention it" in system  # absence questions are answerable, not refused
 
 
 def test_history_truncated_and_content_only():
@@ -87,7 +88,7 @@ def test_history_truncated_and_content_only():
         assert f"turn-{i}" in user
     assert "User: turn-4" in user and "Assistant: turn-5" in user
     assert user.count(C1.passage.text) == 1  # evidence only once, from current retrieval
-    assert pipe.queries == ["current q"]
+    assert pipe.queries == ["current q", "turn-8\ncurrent q"]  # also searched with last user turn
 
 
 @pytest.mark.parametrize("exc", [LLMError("x"), RetrievalError("y")])
@@ -129,3 +130,38 @@ def test_answer_passes_qa_thresholds():
     assert pipe.kw == {"min_score_contract": QA_MIN_SCORE_CONTRACT,
                        "min_score_official": QA_MIN_SCORE_OFFICIAL}
     assert (QA_MIN_SCORE_CONTRACT, QA_MIN_SCORE_OFFICIAL) == (0.27, 0.40)
+
+
+class FollowUpPipe:
+    """Returns nothing for the bare follow-up, evidence only when the earlier question is included."""
+    def __init__(self):
+        self.queries = []
+
+    def retrieve(self, query, **kw):
+        self.queries.append(query)
+        return FULL if "childcare" in query else EMPTY
+
+
+def test_follow_up_retrieves_with_previous_question():
+    hist = [ChatTurn(role="user", content="How much childcare leave?"),
+            ChatTurn(role="assistant", content="2 days per relevant period.")]
+    pipe = FollowUpPipe()
+    t = answer("what is a relevant period?", hist, pipe, LLM(ok([O1.passage.id])))
+    assert t.content == "LLM ANSWER" and [h.passage.id for h in t.evidence.official] == ["ea-s10"]
+    assert pipe.queries == ["what is a relevant period?",
+                            "How much childcare leave?\nwhat is a relevant period?"]
+
+
+def test_first_question_retrieves_once():
+    pipe = Pipe(FULL)
+    answer("q", [], pipe, LLM(ok([C1.passage.id])))
+    assert pipe.queries == ["q"]
+
+
+def test_merge_dedupes_keeps_best_score():
+    from src.qa import _merge
+    a = Evidence(contract=[hit("c", "contract", "x", 0.3)], official=[hit("o", "law", "y", 0.5)])
+    b = Evidence(contract=[hit("c", "contract", "x", 0.6)], official=[hit("p", "law", "z", 0.7)])
+    m = _merge(a, b)
+    assert [(h.passage.id, h.score) for h in m.contract] == [("c", 0.6)]
+    assert [h.passage.id for h in m.official] == ["p", "o"]

@@ -139,7 +139,7 @@ def test_missing_kb(env, exc):
 
 def test_report_rendering(env):
     at = analyze(run_upload())
-    df = at.dataframe[0].value
+    df = at.table[0].value
     assert list(df.columns) == ["Term", "Status", "Wording"]
     assert len(df) == 11
     assert set(df["Status"]) == {"Consistent", "Needs Attention", "Unable to Assess"}

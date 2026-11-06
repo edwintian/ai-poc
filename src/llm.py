@@ -3,7 +3,9 @@ from pydantic import BaseModel
 
 from src.config import get_secret
 
-DEFAULT_MODEL = "gpt-4o-mini"
+# ADR 0014: each use case has its own model, chosen from real-model evals on 2026-11-06.
+DEFAULT_MODEL = "gpt-4o-mini"  # Contract Health Check: 0 unsafe Consistent, best status accuracy
+DEFAULT_QA_MODEL = "gpt-5.4-mini"  # Ask Your Contract: answered 15/15 on-topic, refused 3/3 off-topic
 
 
 class LLMError(Exception):
@@ -18,9 +20,15 @@ def _api_error(action: str, e: Exception) -> LLMError:
 
 
 class OpenAIClient:
-    def __init__(self, client=None, model: str | None = None):
+    def __init__(self, client=None, model: str | None = None,
+                 setting: str = "LLM_MODEL", default: str = DEFAULT_MODEL):
         self._client = client
-        self.model = model or get_secret("LLM_MODEL") or DEFAULT_MODEL
+        self.model = model or get_secret(setting) or default
+
+    @classmethod
+    def for_qa(cls, client=None) -> "OpenAIClient":
+        """Ask Your Contract client: QA_LLM_MODEL, else DEFAULT_QA_MODEL (not LLM_MODEL)."""
+        return cls(client=client, setting="QA_LLM_MODEL", default=DEFAULT_QA_MODEL)
 
     def _sdk(self):
         if self._client is None:

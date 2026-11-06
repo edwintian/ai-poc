@@ -50,7 +50,8 @@ else:
     if question:
         try:
             with st.spinner("Finding an answer…"):
-                reply = qa.answer(question, st.session_state["chat"], pipeline, llm_mod.OpenAIClient())
+                reply = qa.answer(question, st.session_state["chat"], pipeline,
+                                   llm_mod.OpenAIClient.for_qa())
         except (llm_mod.LLMError, rp.RetrievalError):
             st.error("The question service is unavailable right now; please try again.")
         else:
