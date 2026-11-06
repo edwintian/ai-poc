@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pandas as pd
 import streamlit as st
 
@@ -8,6 +10,7 @@ from src import rag_pipeline as rp
 from src.ui import md_escape
 
 KB_DIR = "data/knowledge_base"
+SAMPLE_PDF = Path(__file__).resolve().parent.parent / "test_contract.pdf"
 NOT_FOUND = "Not found in contract"
 TERM_LABELS = {
     "salary_payment": "Salary payment",
@@ -47,6 +50,15 @@ st.session_state.setdefault("chat", [])
 st.title("Contract Health Check")
 st.write("Upload an employment contract to see how its key terms compare with Singapore law and MOM guidance.")
 st.info("The contract text is sent to OpenAI for analysis and is not stored after your session ends.")
+
+if SAMPLE_PDF.is_file():
+    st.download_button(
+        "Download a sample contract to try",
+        data=SAMPLE_PDF.read_bytes(),
+        file_name=SAMPLE_PDF.name,
+        mime="application/pdf",
+        icon=":material/download:",
+    )
 
 uploaded = st.file_uploader(
     "Employment contract (PDF)", type=["pdf"], key=f"upload_{st.session_state.setdefault('upload_n', 0)}"
